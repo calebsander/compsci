@@ -15,8 +15,8 @@ class WindChill {
     
     System.out.print("Windspeed: ");
     float speed = scanner.nextFloat();
-    speed = speed * 0.621371F * 60F;
+    speed = speed * 0.621371F * 60F; //0.621371 from a Google search
     
-    System.out.println("Windchilld: " + (35.74F + .6215F * temp - 35.75F * Math.pow(speed, .16F) + .4275F * temp * Math.pow(speed, .16F)));
+    System.out.println("Windchill: " + (35.74F + .6215F * temp - 35.75F * Math.pow(speed, .16F) + .4275F * temp * Math.pow(speed, .16F)));
   }
 }

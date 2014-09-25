@@ -11,7 +11,7 @@ class SleepCalc {
     Scanner scanner = new Scanner(System.in);
     System.out.print("Average hours per night: ");
     float hours = scanner.nextFloat();
-    float yearlength = 8765.76F; //24 * 365.24
+    float yearlength = 8765.76F;
     System.out.println("Hours slept per year: " + (hours * 365.24F));
     System.out.println("Percentage of time spent sleeping: " + (hours / .24F) + "%");
   }
