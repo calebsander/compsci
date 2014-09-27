@@ -12,7 +12,7 @@ class Interest {
     System.out.print("Annual rate (%): ");
     double rate = scanner.nextDouble() / 100;
     System.out.println("Maximum rate: " + ((Math.pow(Math.E, rate) - 1) * 100) + "%");
-    long input = 1;
+    long input;
     System.out.print("Number of compounds per year: ");
     while ((input = scanner.nextLong()) != 0) {
       System.out.println("Rate: " + ((Math.pow(rate / input + 1, input) - 1) * 100) + "%");
