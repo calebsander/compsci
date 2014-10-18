@@ -1,7 +1,7 @@
 /*
-	Caleb Sander
-	09/26/2014
-	Lab 1
+ Caleb Sander
+ 09/26/2014
+ Lab 1
 */
 
 import java.util.Scanner;
@@ -22,4 +22,5 @@ class LeapYear {
 		if (leap) System.out.println("Leap year? Yes"); //output whether or not it is a leap year
 		else System.out.println("Leap year? No");
 	}
+
 }
