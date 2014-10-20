@@ -59,7 +59,7 @@ class VariableCheck {
 						success = 0;
 						break; //no point in continuing
 					}
-					else if (testchar == 36) success = 1; //if legal but the character is "$", bad style
+					else if (testchar == 36 || testchar == 95) success = 1; //if legal but the character is "$", bad style
 				}
 			}
 			switch (success) { //output result based on success
