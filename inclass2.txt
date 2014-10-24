@@ -1,0 +1,78 @@
+/*
+	Caleb Sander
+	10/17/2014
+	In-class Assignments 2
+*/
+
+//1.a
+import java.util.Scanner;
+
+class Tailgate {
+	public static void main(String[] args) {
+		Scanner scanner = new Scanner(System.in);
+		System.out.print("Enter your speed (in mph): ");
+		double speed = scanner.nextDouble();
+		System.out.print("Enter your tailgating distance (in feet): ");
+		double distance = scanner.nextDouble();
+		if (speed * (2.25 + speed / 21) > distance) System.out.println("Major wreck!");
+		else System.out.println("No wreck!");
+	}
+}
+
+//1.b
+import java.util.Scanner;
+
+class Tailgate {
+	public static void main(String[] args) {
+		double RANGE = 40; //constant for range around cutoff distance that could be a minor wreck
+		Scanner scanner = new Scanner(System.in);
+		System.out.print("Enter your speed (in mph): ");
+		double speed = scanner.nextDouble();
+		System.out.print("Enter your tailgating distance (in feet): ");
+		double distance = scanner.nextDouble();
+		if (speed * (2.25 + speed / 21) > distance + RANGE / 2) System.out.println("Major wreck!");
+		else if (speed * (2.25 + speed / 21) < distance - RANGE / 2) System.out.println("No wreck!");
+		else System.out.println("Minor wreck!");
+	}
+}
+
+//2
+import java.util.Scanner;
+
+class VariableCheck {
+	public static void main(String[] args) {
+		Scanner scanner = new Scanner(System.in);
+		String input; //input variable name
+		byte success; //stores legality of variable - [0, 1, 2] -> [illegal, bad style but legal, good style]
+		char testchar; //temporarily stores the character being tested
+		int i; //index for iterating over the characters in the name
+		System.out.print("Enter a variable name (q to quit): ");
+		while ((input = scanner.next()) != "q") {
+			success = 2; //assume good style unless it fails criteria
+			testchar = input.charAt(0);
+			if (testchar != 36 && testchar != 95 && (testchar < 65 || testchar > 90) && (testchar < 97 || testchar > 122)) success = 0; //if first character is anything besides "$", "_" or letters, illegal
+			else if (testchar < 97 || testchar > 122) success = 1; //if legal, anything besides lowercase letters is bad style
+			if (success != 0) { //if it failed the first character test, no point in continuing
+				for (i = 1; i < input.length(); i++) { //iterate over the rest of the characters in the string
+					testchar = input.charAt(i);
+					if (testchar != 36 && testchar != 95 && (testchar < 65 || testchar > 90) && (testchar < 97 || testchar > 122) && (testchar < 48 || testchar > 57)) { //if character is anything besides "$", "_", letters, or numbers, illegal
+						success = 0;
+						break; //no point in continuing
+					}
+					else if (testchar == 36 || testchar == 95) success = 1; //if legal but the character is "$", bad style
+				}
+			}
+			switch (success) { //output result based on success
+				case 0:
+					System.out.println("Illegal.");
+					break;
+				case 1:
+					System.out.println("Legal, but uses poor style.");
+					break;
+				case 2:
+					System.out.println("Good!");
+			}
+			System.out.print("Enter a variable name (q to quit): ");
+		}
+	}
+}
