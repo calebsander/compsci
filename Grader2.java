@@ -1,7 +1,7 @@
 /*
   Caleb Sander
   10/21/2014
-  Grader2
+  Grader2 (In-class assignment)
 */
 
 import java.util.Scanner;
