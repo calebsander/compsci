@@ -10,35 +10,120 @@ import java.util.ArrayList;
 class Hangman {
   public static void main(String[] args) {
     Scanner scanner = new Scanner(System.in);
-    System.out.print("What word would you like to use? ");
+    System.out.print("What word would you like to use? "); //prompt for word input
     String word = scanner.next();
-    System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    char[] guessedword = new char[word.length()];
-    for (int i = 0; i < word.length(); i++) guessedword[i] = '_';
-    ArrayList guesses = new ArrayList();
-    char guess;
-    ArrayList<Integer> indices;
-    byte incorrectguesses = 0;
-    while (incorrectguesses < 7) {
-      System.out.print("Guess a letter! ");
-      guess = scanner.next().toCharArray()[0];
-      indices = indicesOf(word, guess);
-      if (indices.size() == 0) {
-        incorrectguesses++;
-        System.out.println("You guessed a letter that is not in the word, " + (7 - incorrectguesses) + " guesses remaining.");
+    char[] guessedword = new char[word.length()]; //stores which characters in the word have been guessed so far
+    for (int i = 0; i < word.length(); i++) guessedword[i] = '_'; //fill guessed "string" with underscores (to show that no characters have yet been guessed)
+    ArrayList<Character> guesses = new ArrayList<Character>(); //stores past guesses
+    char guess; //temporarily stores current guess
+    ArrayList<Integer> indices; //temporarily stores the result of indicesOf()
+    byte guessesremaining = 7; //arbitrarily choose to have 7 incorrect guesses before losing
+    while (guessesremaining > 0 && !(new String(guessedword).equals(word))) { //keep guessing until getting the word or running out of guesses
+      System.out.print("Guess a letter! "); //prompt for letter input
+      guess = scanner.next().toCharArray()[0]; //get single character from input
+      clearScreen();
+      if (guesses.indexOf(guess) == -1) { //if character hasn't yet been guessed
+        guesses.add(guess); //record that character has been guessed
+        indices = indicesOf(word, guess);
+        if (indices.size() == 0) { //if the guess is not in the word
+          guessesremaining--;
+          System.out.println("You guessed a letter that is not in the word.");
+          printHangman(guessesremaining);
+        }
+        else { //if the guess is in the word
+          for (int i = 0; i < indices.size(); i++) guessedword[indices.get(i).intValue()] = guess; //replace underscores with guessed character, where they should be
+          System.out.println("You guessed a letter that is in the word: " + new String(guessedword));
+        }
+        String lettersstring = ""; //a space-separated list of all the old guesses, to print later
+        for (int i = 0; i < guesses.size(); i++) {
+          char[] oldguess = {guesses.get(i)}; //because characters can't be converted to strings
+          lettersstring += new String(oldguess) + " ";
+        }
+        System.out.println(lettersstring); //print the list of previously guessed letters
       }
-      else {
-        for (int i = 0; i < indices.size(); i++) guessedword[indices.get(i).intValue()] = guess;
-        System.out.println("You guessed a letter that is in the word: " + new String(guessedword));
-      }
+      else System.out.println("Already guessed " + guess + ". Please guess something else.");
     }
+    if (new String(guessedword).equals(word)) System.out.println("You WON!"); //if the word was correctly guessed, display so
+    else System.out.println("You LOST!"); //if the word wasn't guessed, display so
+    System.out.println("The word was: " + word); //regardless, display the word
   }
-  
-  public static ArrayList indicesOf(String word, char guess) {
+
+  public static ArrayList<Integer> indicesOf(String word, char guess) { //returns an array of undetermined length of integer indices for a character in the word
     ArrayList<Integer> indices = new ArrayList<Integer>();
     for (int i = 0; i < word.length(); i++) {
       if (word.charAt(i) == guess) indices.add(i);
     }
     return indices;
+  }
+
+  public static void printHangman(byte guessesremaining) { //prints ASCII art corresponding to the number of turns remaining
+    System.out.println(guessesremaining + " guesses remaining:");
+    switch (guessesremaining) {
+      case 0:
+        System.out.println("________ ");
+        System.out.println("|      | ");
+        System.out.println("|      O ");
+        System.out.println("|     -|-");
+        System.out.println("|     / \\");
+        System.out.println("|        ");
+        System.out.println("---------");
+        break;
+      case 1:
+        System.out.println("________ ");
+        System.out.println("|      | ");
+        System.out.println("|      O ");
+        System.out.println("|     -|-");
+        System.out.println("|     / \\");
+        System.out.println("|     T-T");
+        System.out.println("---------");
+        break;
+      case 2:
+        System.out.println("________ ");
+        System.out.println("|      | ");
+        System.out.println("|      O ");
+        System.out.println("|     -|-");
+        System.out.println("|     /  ");
+        System.out.println("|     T-T");
+        System.out.println("---------");
+        break;
+      case 3:
+        System.out.println("________ ");
+        System.out.println("|      | ");
+        System.out.println("|      O ");
+        System.out.println("|     -|-");
+        System.out.println("|        ");
+        System.out.println("|     T-T");
+        System.out.println("---------");
+        break;
+      case 4:
+        System.out.println("________ ");
+        System.out.println("|      | ");
+        System.out.println("|      O ");
+        System.out.println("|      | ");
+        System.out.println("|        ");
+        System.out.println("|     T-T");
+        System.out.println("---------");
+        break;
+      case 5:
+        System.out.println("________ ");
+        System.out.println("|      | ");
+        System.out.println("|      O ");
+        System.out.println("|        ");
+        System.out.println("|        ");
+        System.out.println("|     T-T");
+        System.out.println("---------");
+        break;
+      case 6:
+        System.out.println("________ ");
+        System.out.println("|      | ");
+        System.out.println("|        ");
+        System.out.println("|        ");
+        System.out.println("|        ");
+        System.out.println("|     T-T");
+        System.out.println("---------");
+    }
+  }
+  public static void clearScreen() { //prints a bunch of newlines to effectively clear the screen
+    System.out.print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   }
 }
