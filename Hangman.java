@@ -12,7 +12,7 @@ class Hangman {
     clearScreen();
     Scanner scanner = new Scanner(System.in);
     System.out.print("What word would you like to use? "); //prompt for word input
-    String word = scanner.next();
+    String word = scanner.next(); //stores original word
     clearScreen(); //so the word can't be seen by the opponent
     char[] guessedword = new char[word.length()]; //stores which characters in the word have been guessed so far
     for (int i = 0; i < word.length(); i++) guessedword[i] = '_'; //fill guessed "string" with underscores (to show that no characters have yet been guessed)
@@ -20,7 +20,8 @@ class Hangman {
     char guess; //temporarily stores current guess
     ArrayList<Integer> indices; //temporarily stores the result of indicesOf()
     byte guessesremaining = 7; //arbitrarily choose to have 7 incorrect guesses before losing
-    while (guessesremaining > 0 && !(new String(guessedword).equals(word))) { //keep guessing until getting the word or running out of guesses
+    boolean guessed = false; //stores whether or not the word has bene correctly guessed
+    while (guessesremaining > 0 && !guessed) { //keep guessing until getting the word or running out of guesses
       System.out.print("Guess a letter! "); //prompt for letter input
       guess = scanner.next().toCharArray()[0]; //get single character from input
       clearScreen();
@@ -30,11 +31,12 @@ class Hangman {
         if (indices.size() == 0) { //if the guess is not in the word
           guessesremaining--; //count down remaining guesses
           System.out.println("You guessed a letter that is not in the word.");
-          printHangman(guessesremaining);
+          printHangman(guessesremaining); //print the hanging scene
         }
         else { //if the guess is in the word
           for (int i = 0; i < indices.size(); i++) guessedword[indices.get(i).intValue()] = guess; //replace underscores with guessed character, where they should be
           System.out.println("You guessed a letter that is in the word: " + new String(guessedword));
+          guessed = new String(guessedword).equals(word); //calculate whether word has been guessed (only necessary if a new letter was revealed)
         }
         String lettersstring = ""; //a space-separated list of all the old guesses to tell the user what they can guess
         for (int i = 0; i < guesses.size(); i++) { //iterate through each of the old guesses
@@ -45,7 +47,7 @@ class Hangman {
       }
       else System.out.println("Already guessed \"" + guess + "\". Please guess something else."); //if the letter has been guessed, then ask for another
     }
-    if (new String(guessedword).equals(word)) System.out.println("You WON!"); //if the word was correctly guessed, display so
+    if (guessed) System.out.println("You WON!"); //if the word was correctly guessed, display so
     else System.out.println("You LOST!"); //if the word wasn't guessed, display so
     System.out.println("The word was: " + word); //regardless, display the word
   }
@@ -61,8 +63,8 @@ class Hangman {
   public static void printHangman(byte guessesremaining) { //prints ASCII art corresponding to the number of turns remaining
     if (guessesremaining == 1) System.out.println("1 guess remaining:"); //don't pluralize "guess" if only one remains
     else System.out.println(guessesremaining + " guesses remaining:"); //otherwise, just print out how many guesses remain
-    switch (guessesremaining) {
-      case 0:
+    switch (guessesremaining) { //print a different "image" for each number of remaining guesses
+      case 0: //remove the box
         System.out.println("________ ");
         System.out.println("|      | ");
         System.out.println("|      O ");
@@ -71,7 +73,7 @@ class Hangman {
         System.out.println("|        ");
         System.out.println("---------");
         break;
-      case 1:
+      case 1: //draw left leg
         System.out.println("________ ");
         System.out.println("|      | ");
         System.out.println("|      O ");
@@ -80,7 +82,7 @@ class Hangman {
         System.out.println("|     T-T");
         System.out.println("---------");
         break;
-      case 2:
+      case 2: //draw right leg
         System.out.println("________ ");
         System.out.println("|      | ");
         System.out.println("|      O ");
@@ -89,7 +91,7 @@ class Hangman {
         System.out.println("|     T-T");
         System.out.println("---------");
         break;
-      case 3:
+      case 3: //draw arms
         System.out.println("________ ");
         System.out.println("|      | ");
         System.out.println("|      O ");
@@ -98,7 +100,7 @@ class Hangman {
         System.out.println("|     T-T");
         System.out.println("---------");
         break;
-      case 4:
+      case 4: //draw torso
         System.out.println("________ ");
         System.out.println("|      | ");
         System.out.println("|      O ");
@@ -107,7 +109,7 @@ class Hangman {
         System.out.println("|     T-T");
         System.out.println("---------");
         break;
-      case 5:
+      case 5: //draw head
         System.out.println("________ ");
         System.out.println("|      | ");
         System.out.println("|      O ");
@@ -116,7 +118,7 @@ class Hangman {
         System.out.println("|     T-T");
         System.out.println("---------");
         break;
-      case 6:
+      case 6: //draw gallows
         System.out.println("________ ");
         System.out.println("|      | ");
         System.out.println("|        ");
