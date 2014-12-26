@@ -1,0 +1,40 @@
+1. a.
+	public int numWordsOfLength(int len) {
+		int count = 0;
+		for (int i = 0; i < this.myList.size(); i++) {
+			if (this.myList.get(i).length() == len) count++;
+		}
+		return count;
+	}
+b.
+	public void removeWordsOfLength(int len) {
+		for (int i = 0; i < this.myList.size(); i++) {
+			if (this.myList.get(i).length() == len) {
+				this.myList.remove(i);
+				i--;
+			}
+		}
+	}
+4. a.
+	private boolean forwardMoveBlocked() {
+		if (this.facingRight && (this.pos == this.hall.length - 1)) return true;
+		if (!this.facingRight && (this.pos == 0)) return true;
+		return false;
+	}
+b.
+	private void move() {
+		if (this.hall[this.pos] > 0) this.hall[this.pos]--;
+		if (this.hall[this.pos] == 0) {
+			if (this.forwardMoveBlocked()) this.facingRight = !this.facingRight;
+			else {
+				if (this.facingRight) pos++;
+				else pos--;
+			}
+		}
+	}
+c.
+	public int clearHall() {
+		int moves;
+		for (moves = 0; !this.hallIsClear(); moves++) this.move();
+		return moves;
+	}
