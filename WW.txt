@@ -1,3 +1,9 @@
+/*
+	Caleb Sander
+	12/26/2014
+	Winter Work
+*/
+
 1. a.
 	public int numWordsOfLength(int len) {
 		int count = 0;
