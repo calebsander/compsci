@@ -13,10 +13,11 @@ class Deck {
 	}
 
 	public Card deal() {
+		Card returnCard = this.cards[0];
 		Card[] newCards = new Card[this.cards.length - 1];
 		for (int i = 1; i < this.cards.length; i++) newCards[i - 1] = this.cards[i];
 		this.cards = newCards;
-		return this.cards[0];
+		return returnCard;
 	}
 	public void shuffle() {
 		ArrayList<Card> oldCards = new ArrayList<Card>();

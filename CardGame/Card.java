@@ -49,4 +49,60 @@ class Card {
 	public String toString() {
 		return value + " of " + suit;
 	}
+	public boolean equals(Card card) {
+		return this.suit.equals(card.suit) && this.value.equals(card.value);
+	}
+	private String numberSpace() {
+		if (this.value.equals("10")) return "10";
+		else return this.value + " ";
+	}
+	public String[] graphic() {
+		switch (this.suit) {
+			case "spades":
+				String[] toReturns = {
+					"+-----+",
+					"|S   S|",
+					"|     |",
+					"|  " + this.numberSpace() + " |",
+					"|     |",
+					"|S   S|",
+					"+-----+"
+				};
+				return toReturns;
+			case "hearts":
+				String[] toReturnh = {
+					"+-----+",
+					"|H   H|",
+					"|     |",
+					"|  " + this.numberSpace() + " |",
+					"|     |",
+					"|H   H|",
+					"+-----+"
+				};
+				return toReturnh;
+			case "diamonds":
+				String[] toReturnd = {
+					"+-----+",
+					"|D   D|",
+					"|     |",
+					"|  " + this.numberSpace() + " |",
+					"|     |",
+					"|D   D|",
+					"+-----+"
+				};
+				return toReturnd;
+			case "clubs":
+				String[] toReturnc = {
+					"+-----+",
+					"|C   C|",
+					"|     |",
+					"|  " + this.numberSpace() + " |",
+					"|     |",
+					"|C   C|",
+					"+-----+"
+				};
+				return toReturnc;
+		}
+		return new String[0];
+	}
 }
