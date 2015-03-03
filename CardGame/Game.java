@@ -11,7 +11,7 @@ class Game {
 			hands[i].sort();
 		}
 		clearScreen();
-		hands[0].printGraphic();
+		hands[0].printPossibilities(hands[0].getPossibilities(true));
 		Scanner scanner = new Scanner(System.in);
 		scanner.useDelimiter("\n");
 		String[] switchStrings;
@@ -31,12 +31,10 @@ class Game {
 		for (int i = 1; i < 4; i++) {
 			nextTransfer = hands[i].pickOut();
 			hands[i].add(transfer);
-			hands[i].sort();
 			transfer = nextTransfer;
 		}
 		hands[0].add(transfer);
 		hands[0].sort();
-		hands[0].printGraphic();
 		int firstPlay = 0;
 		Card twoOfClubs = new Card("clubs", "2");
 		for (int i = 0; i < hands.length; i++) {
@@ -48,63 +46,83 @@ class Game {
 		ArrayList<String[]> playedCards;
 		String[] cardDisplay;
 		Card[] currentCards = new Card[4];
-		int input = 0;
+		int input;
 		String suit = "";
 		ArrayList<Integer> possibilities;
-		boolean invalidInput;
-		for (int round = 0, player, line, card, possibility; round < Hand.HAND_SIZE; round++) {
-			clearScreen();
+		boolean heartsBroken = false;
+		int absolutePlayer;
+		int maxPlayer;
+		for (int round = 0, player, line, card; round < Hand.HAND_SIZE; round++) {
 			playedCards = new ArrayList<String[]>();
 			for (player = 0; player < 4; player++) {
+				absolutePlayer = (firstPlay + player) % 4;
 				if (player == 0) {
-					if ((firstPlay + player) % 4 == 0) {
+					possibilities = hands[absolutePlayer].getPossibilities(heartsBroken);
+					if (absolutePlayer == 0) {
 						System.out.println();
 						System.out.println("Which card to play? ");
-						hands[0].printGraphic();
-						while ((input = scanner.nextInt()) < 1 || (input > Hand.HAND_SIZE - round));
-						currentCards[0] = hands[0].play(input - 1);
-						suit = currentCards[0].getSuit();
+						hands[absolutePlayer].printPossibilities(possibilities);
+						while (invalidInput(possibilities, input = scanner.nextInt()));
+						currentCards[absolutePlayer] = hands[absolutePlayer].play(input - 1);
 					}
 					else {
-						currentCards[(firstPlay + player) % 4] = hands[(firstPlay + player) % 4].play();
-						suit = currentCards[(firstPlay + player) % 4].getSuit();
-						playedCards.add(currentCards[(firstPlay + player) % 4].graphic());
+						currentCards[absolutePlayer] = hands[absolutePlayer].play(Hand.pickRandom(possibilities));
+						playedCards.add(currentCards[absolutePlayer].graphic());
 					}
+					suit = currentCards[absolutePlayer].getSuit();
+					if (suit.equals("hearts")) heartsBroken = true;
 				}
 				else {
-					if ((firstPlay + player) % 4 == 0) {
+					possibilities = hands[absolutePlayer].getPossibilities(suit, heartsBroken);
+					if (absolutePlayer == 0) {
+						System.out.println();
 						System.out.println("Played so far:");
 						cardDisplay = new String[playedCards.get(0).length];
-						for (line = 0; line < playedCards.get(0).length; line++) {
-							cardDisplay[line] = "";
-							for (card = 0; card < playedCards.size(); card++) cardDisplay[line] += " " + playedCards.get(card)[line];
+						for (line = 0; line < cardDisplay.length; line++) {
+							cardDisplay[line] = playedCards.get(0)[line];
+							for (card = 1; card < playedCards.size(); card++) cardDisplay[line] += " " + playedCards.get(card)[line];
 							System.out.println(cardDisplay[line]);
 						}
 						System.out.println();
 						System.out.println("Which card to play? ");
-						possibilities = hands[0].printSuit(suit);
-						invalidInput = true;
-						while (invalidInput) {
-							input = scanner.nextInt();
-							for (possibility = 0; possibility < possibilities.size(); possibility++) {
-								System.out.println(possibilities.get(possibility));
-								if (possibilities.get(possibility).intValue() + 1 == input) {
-									invalidInput = false;
-									break;
-								}
-							}
-						}
-						currentCards[0] = hands[0].play(input - 1);
+						hands[absolutePlayer].printPossibilities(possibilities);
+						while (invalidInput(possibilities, input = scanner.nextInt()));
+						currentCards[absolutePlayer] = hands[absolutePlayer].play(input - 1);
 					}
 					else {
-						currentCards[(firstPlay + player) % 4] = hands[(firstPlay + player) % 4].play(suit);
-						playedCards.add(currentCards[(firstPlay + player) % 4].graphic());
+						currentCards[absolutePlayer] = hands[absolutePlayer].play(Hand.pickRandom(possibilities));
+						playedCards.add(currentCards[absolutePlayer].graphic());
 					}
+					if (currentCards[absolutePlayer].getSuit().equals("hearts")) heartsBroken = true;
 				}
+			}
+			clearScreen();
+			System.out.println("Last round:");
+			cardDisplay = new String[currentCards[0].graphic().length];
+			for (line = 0; line < cardDisplay.length; line++) {
+				cardDisplay[line] = currentCards[0].graphic()[line];
+				for (card = 1; card < currentCards.length; card++) cardDisplay[line] += " " + currentCards[card].graphic()[line];
+				System.out.println(cardDisplay[line]);
+			}
+			maxPlayer = firstPlay;
+			for (player = 1; player < 4; player++) {
+				absolutePlayer = (firstPlay + player) % 4;
+				if (currentCards[absolutePlayer].getSuit().equals(suit) && currentCards[absolutePlayer].getValue() > currentCards[maxPlayer].getValue()) maxPlayer = absolutePlayer;
+			}
+			firstPlay = maxPlayer;
+			for (player = 0; player < 4; player++) {
+				if (player == maxPlayer) System.out.print("   *    ");
+				else System.out.print("        ");
 			}
 		}
 	}
 	private static void clearScreen() {
 		System.out.print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+	}
+	private static boolean invalidInput(ArrayList<Integer> possibilities, int input) {
+		for (int possibility = 0; possibility < possibilities.size(); possibility++) {
+			if (possibilities.get(possibility).intValue() + 1 == input) return false;
+		}
+		return true;
 	}
 }
