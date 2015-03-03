@@ -54,11 +54,11 @@ class Hand {
 	public void add(ArrayList<Card> cards) {
 		this.hand.addAll(cards);
 	}
+	public int indexOf(Card card) {
+		return this.hand.indexOf(card);
+	}
 	public boolean contains(Card card) {
-		for (int i = 0; i < this.hand.size(); i++) {
-			if (this.hand.get(i).equals(card)) return true;
-		}
-		return false;
+		return this.indexOf(card) != -1;
 	}
 	public ArrayList<Integer> getPossibilities(boolean heartsBroken) {
 		ArrayList<Integer> possibilities = new ArrayList<Integer>();

@@ -1,3 +1,10 @@
+/*
+	Caleb Sander
+	03/02/2015
+	Hearts
+	Card class
+*/
+
 class Card {
 	private String suit;
 	private String value;
@@ -49,8 +56,12 @@ class Card {
 	public String toString() {
 		return value + " of " + suit;
 	}
-	public boolean equals(Card card) {
-		return this.suit.equals(card.suit) && this.value.equals(card.value);
+	public boolean equals(Object o) {
+		if (o instanceof Card) {
+			Card card = (Card)o;
+			return this.suit.equals(card.suit) && this.value.equals(card.value);
+		}
+		return false;
 	}
 	private String numberSpace() {
 		if (this.value.equals("10")) return "10";
