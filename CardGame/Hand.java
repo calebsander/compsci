@@ -1,3 +1,10 @@
+/*
+	Caleb Sander
+	03/02/2015
+	Hearts
+	Hand class
+*/
+
 import java.util.ArrayList;
 
 class Hand {
@@ -10,10 +17,10 @@ class Hand {
 
 	public void sort() {
 		ArrayList<Card> newHand = new ArrayList<Card>();
-		for (int i = 0, j, k; i < SUITS.length; i++) {
-			for (j = 0; j < VALUES.length; j++) {
+		for (int i = 0, j, k; i < Card.SUITS.length; i++) {
+			for (j = 0; j < Card.VALUES.length; j++) {
 				for (k = 0; k < this.hand.size(); k++) {
-					if (this.hand.get(k).equals(new Card(SUITS[i], VALUES[j]))) {
+					if (this.hand.get(k).equals(new Card(Card.SUITS[i], Card.VALUES[j]))) {
 						newHand.add(this.hand.get(k));
 						hand.remove(k);
 						k--;
@@ -103,6 +110,4 @@ class Hand {
 	}
 
 	protected final static int HAND_SIZE = 13;
-	private final static String[] SUITS = {"clubs", "diamonds", "spades", "hearts"};
-	private final static String[] VALUES = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
 }

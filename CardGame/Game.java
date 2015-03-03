@@ -1,3 +1,10 @@
+/*
+	Caleb Sander
+	03/02/2015
+	Hearts
+	Main class
+*/
+
 import java.util.ArrayList;
 import java.util.Scanner;
 

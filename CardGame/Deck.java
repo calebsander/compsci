@@ -1,14 +1,19 @@
+/*
+	Caleb Sander
+	03/02/2015
+	Hearts
+	Deck class
+*/
+
 import java.util.ArrayList;
 
 class Deck {
 	private Card[] cards;
 
 	Deck() {
-		String[] suits = {"clubs", "diamonds", "spades", "hearts"};
-		String[] values = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
-		this.cards = new Card[suits.length * values.length];
-		for (int i = 0, j; i < suits.length; i++) {
-			for (j = 0; j < values.length; j++) this.cards[i * values.length + j] = new Card(suits[i], values[j]);
+		this.cards = new Card[Card.SUITS.length * Card.VALUES.length];
+		for (int i = 0, j; i < Card.SUITS.length; i++) {
+			for (j = 0; j < Card.VALUES.length; j++) this.cards[i * Card.VALUES.length + j] = new Card(Card.SUITS[i], Card.VALUES[j]);
 		}
 	}
 
