@@ -10,11 +10,13 @@ import java.util.ArrayList;
 class Hand {
 	private ArrayList<Card> hand;
 
+	//Instatantiates a new hand by dealing the necessary number of cards from the deck
 	Hand(Deck deck) {
 		this.hand = new ArrayList<Card>();
-		for (int i = 0; i < HAND_SIZE; i++) this.hand.add(deck.deal());
+		for (int i = 0; i < Card.VALUES.length; i++) this.hand.add(deck.deal());
 	}
 
+	//Sorts the hand by suit and then number
 	public void sort() {
 		ArrayList<Card> newHand = new ArrayList<Card>();
 		for (int i = 0, j, k; i < Card.SUITS.length; i++) {
@@ -30,6 +32,7 @@ class Hand {
 		}
 		this.hand = newHand;
 	}
+	//Randomly takes out 3 cards and returns them
 	public ArrayList<Card> pickOut() {
 		ArrayList<Card> taken = new ArrayList<Card>(3);
 		int index;
@@ -40,6 +43,7 @@ class Hand {
 		}
 		return taken;
 	}
+	//Take out cards at specified indicies and returns them
 	public ArrayList<Card> pickOut(int[] indices) {
 		ArrayList<Card> taken = new ArrayList<Card>();
 		for (int i = 0, j; i < indices.length; i++) {
@@ -51,15 +55,19 @@ class Hand {
 		}
 		return taken;
 	}
+	//Adds cards to the hand
 	public void add(ArrayList<Card> cards) {
 		this.hand.addAll(cards);
 	}
+	//Gets index of a specified card
 	public int indexOf(Card card) {
 		return this.hand.indexOf(card);
 	}
+	//Returns whether the hand contains a specified card
 	public boolean contains(Card card) {
 		return this.indexOf(card) != -1;
 	}
+	//Returns possible cards to play of any suit (except hearts, if they are not broken)
 	public ArrayList<Integer> getPossibilities(boolean heartsBroken) {
 		ArrayList<Integer> possibilities = new ArrayList<Integer>();
 		if (heartsBroken) {
@@ -76,6 +84,7 @@ class Hand {
 		}
 		return possibilities;
 	}
+	//Returns possible cards to play of a specified suit (except hearts, if they are not broken)
 	public ArrayList<Integer> getPossibilities(String suit, boolean heartsBroken) {
 		ArrayList<Integer> possibilities = new ArrayList<Integer>();
 		for (int i = 0; i < this.hand.size(); i++) {
@@ -84,14 +93,13 @@ class Hand {
 		if (possibilities.size() == 0) return this.getPossibilities(heartsBroken);
 		return possibilities;
 	}
-	public static int pickRandom(ArrayList<Integer> possibilities) {
-		return possibilities.get((int)Math.floor(Math.random() * possibilities.size())).intValue();
-	}
+	//Plays the card at a specified index
 	public Card play(int index) {
 		Card returnCard = this.hand.get(index);
 		this.hand.remove(index);
 		return returnCard;
 	}
+	//Displays the hand and which cards can be played
 	public void printPossibilities(ArrayList<Integer> possibilities) {
 		String[] toPrint = this.hand.get(0).graphic(), cardPrint;
 		for (int i = 1, j; i < this.hand.size(); i++) {
@@ -109,5 +117,8 @@ class Hand {
 		System.out.println();
 	}
 
-	protected final static int HAND_SIZE = 13;
+	//Utility function for picking a random element out of an ArrayList
+	public static int pickRandom(ArrayList<Integer> possibilities) {
+		return possibilities.get((int)Math.floor(Math.random() * possibilities.size())).intValue();
+	}
 }

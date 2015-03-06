@@ -23,12 +23,11 @@ class Deck {
 		return returnCard;
 	}
 	public void shuffle() {
-		ArrayList<Card> oldCards = this.cards.clone();
 		ArrayList<Card> newCards = new ArrayList<Card>();
-		for (int i = 0, selected; oldCards.size() > 0; i++) {
-			selected = (int)Math.floor(Math.random() * oldCards.size());
-			newCards.add(oldCards.get(selected));
-			oldCards.remove(selected);
+		for (int i = 0, selected; this.cards.size() > 0; i++) {
+			selected = (int)Math.floor(Math.random() * this.cards.size());
+			newCards.add(this.cards.get(selected));
+			this.cards.remove(selected);
 		}
 		this.cards = newCards;
 	}

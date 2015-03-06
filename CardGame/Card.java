@@ -63,10 +63,12 @@ class Card {
 		}
 		return false;
 	}
+	//Utility function for getting a two-character string representing the value (adding in a space if necessary)
 	private String numberSpace() {
 		if (this.value.equals("10")) return "10";
 		else return this.value + " ";
 	}
+	//Generates a text representation of the card
 	public String[] graphic() {
 		switch (this.suit) {
 			case "spades":
