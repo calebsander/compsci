@@ -18,6 +18,16 @@ class Game {
 			hands[i].sort();
 		}
 		clearScreen();
+		System.out.println("Hearts");
+		System.out.println("There are 4 players each with a hand of 13 cards");
+		System.out.println("Each round, every player plays one card");
+		System.out.println("The person who has the 2 of Clubs must play it first");
+		System.out.println("The suit of the card played much match the suit of the first card played in the round, unless the player is out");
+		System.out.println("Hearts canot be played until someone has been forced to play a heart by having nothing else in their hand");
+		System.out.println("The player with the highest card in the suit that was led takes all the cards played in the round and leads the next");
+		System.out.println("Each heart taken is worth 1 point, and the Queen of Spades is worth 13");
+		System.out.println("Try to gain as few points as possible");
+		System.out.println();
 		hands[0].printPossibilities(hands[0].getPossibilities(true));
 		Scanner scanner = new Scanner(System.in);
 		scanner.useDelimiter("\n");
@@ -138,11 +148,6 @@ class Game {
 				absolutePlayer = (firstPlayer + player) % 4;
 				if (currentCards[absolutePlayer].getSuit().equals(suit) && currentCards[absolutePlayer].getValue() > currentCards[maxPlayer].getValue()) maxPlayer = absolutePlayer;
 			}
-			for (card = 0; card < currentCards.length; card++) {
-				if (currentCards[card].equals(queenOfSpades)) points[maxPlayer] += 13;
-				else if (currentCards[card].getSuit().equals("hearts")) points[maxPlayer]++;
-			}
-			firstPlayer = maxPlayer;
 			for (player = 0; player < 4; player++) {
 				if (player == maxPlayer) {
 					System.out.print("   *    ");
@@ -151,6 +156,19 @@ class Game {
 				else System.out.print("        ");
 			}
 			System.out.println();
+			for (card = 0; card < currentCards.length; card++) {
+				if (currentCards[card].equals(queenOfSpades)) {
+					System.out.print("   13   ");
+					points[maxPlayer] += 13;
+				}
+				else if (currentCards[card].getSuit().equals("hearts")) {
+					System.out.print("   1    ");
+					points[maxPlayer]++;
+				}
+				else System.out.print("        ");
+			}
+			System.out.println();
+			firstPlayer = maxPlayer;
 		}
 		System.out.println();
 		System.out.println("Game finished");
