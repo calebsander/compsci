@@ -26,16 +26,35 @@ class Square {
 	public boolean hasPossibility(int possibility) {
 		return this.possibilities.contains(possibility);
 	}
+	public ArrayList<Integer> getPossibilities() {
+		return this.possibilities;
+	}
 	public void select(int value) {
+		for (int i = 0; i < this.possibilities.size(); i++) {
+			if (this.possibilities.get(i).intValue() != value) {
+				this.possibilities.remove(i);
+				i--;
+			}
+		}
 		this.value = value;
-		this.possibilities = new ArrayList<Integer>(1);
-		this.possibilities.add(value);
 	}
 	public int getValue() {
 		return this.value;
 	}
+	public boolean empty() {
+		return this.getValue() == 0;
+	}
 	public boolean equals(Square other) {
-		return this.value == other.value;
+		if (this.possibilities.size() != other.possibilities.size()) return false;
+		for (int i = 0; i < this.possibilities.size(); i++) {
+			if (!other.possibilities.contains(this.possibilities.get(i))) return false;
+		}
+		return true;
+	}
+	public Square clone() {
+		Square newSquare = new Square(this.value);
+		newSquare.possibilities = (ArrayList<Integer>)this.possibilities.clone();
+		return newSquare;
 	}
 	public String possibilitiesRowString(int level) {
 		String returnString = "";
