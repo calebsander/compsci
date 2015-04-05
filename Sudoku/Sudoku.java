@@ -177,6 +177,57 @@ class Sudoku {
 		}
 	}
 	//TODO: If all possibilities for a certain number in a row or column lie in the same box, no other number in that box can have that value. Similarly, if all the possibilities for a certain number in a box lie in the same row or column, no other number in that row or column can have that value.
+	public void translateExclusivity() {
+		ArrayList<Integer> occurences;
+		int firstOccurence;
+		boolean inSameBox;
+		int box;
+		int[] boxCoords;
+		for (int i = 1, j, k; i < 10; i++) { //iterate over numbers
+			for (j = 0; j < 9; i++) { //iterate over rows
+				occurences = new ArrayList<Integer>();
+				for (k = 0; k < 9; k++) { //iterate over row
+					if (this.puzzle[j][k].hasPossibility(i)) occurences.add(k / 3);
+				}
+				firstOccurence = occurences.get(0).intValue();
+				inSameBox = true;
+				for (k = 1; k < occurences.size(); k++) { //iterate over occurences
+					if (occurences.get(k).intValue() != firstOccurence) {
+						inSameBox = false;
+						break;
+					}
+				}
+				if (inSameBox) { //if all occurences are in the same box, remove all other occurences from the box
+					box = (j / 3) * 3 + firstOccurence;
+					for (k = 0; k < 9; k++) { //iterate over box
+						boxCoords = boxCoords(box, k);
+						if (boxCoords[0] != j) this.puzzle[boxCoords[0]][boxCoords[1]].removePossibility(i);
+					}
+				}
+			}
+			for (j = 0; j < 9; i++) { //iterate over columns
+				occurences = new ArrayList<Integer>();
+				for (k = 0; k < 9; k++) { //iterate over column
+					if (this.puzzle[k][j].hasPossibility(i)) occurences.add(k / 3);
+				}
+				firstOccurence = occurences.get(0).intValue();
+				inSameBox = true;
+				for (k = 1; k < occurences.size(); k++) { //iterate over occurences
+					if (occurences.get(k).intValue() != firstOccurence) {
+						inSameBox = false;
+						break;
+					}
+				}
+				if (inSameBox) { //if all occurences are in the same box, remove all other occurences from the box
+					box = (firstOccurence) * 3 + j / 3;
+					for (k = 0; k < 9; k++) { //iterate over box
+						boxCoords = boxCoords(box, k);
+						if (boxCoords[1] != j) this.puzzle[boxCoords[0]][boxCoords[1]].removePossibility(i);
+					}
+				}
+			}
+		}
+	}
 	//TODO: If a set of squares in a row, column, or box contains the only ones that can have certain numbers (and there are as many of these numbers as squares), those squares cannot be anything else
 	public boolean equals(Sudoku other) {
 		for (int i = 0, j; i < 9; i++) {
