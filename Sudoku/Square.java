@@ -27,7 +27,7 @@ class Square {
 		return this.possibilities.contains(possibility);
 	}
 	public ArrayList<Integer> getPossibilities() {
-		return this.possibilities;
+		return (ArrayList<Integer>)this.possibilities.clone();
 	}
 	public void select(int value) {
 		for (int i = 0; i < this.possibilities.size(); i++) {

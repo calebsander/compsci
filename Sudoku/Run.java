@@ -1,5 +1,6 @@
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 class Run {
 	public static void main(String[] args) {
@@ -12,9 +13,11 @@ class Run {
 			String[] rowStrings;
 			char[] tempCharArray;
 			Sudoku sudoku, lastSudoku;
+			ArrayList<Boolean> done = new ArrayList<Boolean>();
 			FileReader inputStream = new FileReader(args[0]);
 			inputStream.read();
 			for (int i = 0, j, k; i == 0 || inputStream.read() != ']'; i++) { //iterate over puzzles
+				System.out.println(i);
 				inputStream.read();
 				rowStrings = new String[9];
 				for (j = 0; j < 9; j++) { //iterate over rows
@@ -35,11 +38,14 @@ class Run {
 					sudoku.killPossibilities();
 					sudoku.chooseUnique();
 					sudoku.findContainedGroups();
+					sudoku.guess();
 				} while (!sudoku.equals(lastSudoku));
 				sudoku.print();
+				done.add(new Boolean(sudoku.done()));
 				System.out.println();
 			}
 			inputStream.close();
+			for (int i = 0; i < done.size(); i++) System.out.println(done.get(i));
 		}
 		catch (IOException e) {
 			System.out.println("Error reading file");

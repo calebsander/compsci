@@ -3,7 +3,7 @@ import java.util.ArrayList;
 class Sudoku {
 	private Square[][] puzzle;
 
-	private Sudoku(Square[][] puzzle) {
+	Sudoku(Square[][] puzzle) {
 		this.puzzle = puzzle;
 	}
 	Sudoku(String[] rowStrings) {
@@ -23,6 +23,30 @@ class Sudoku {
 		returnCoords[0] = (box % 3) * 3 + pos % 3;
 		returnCoords[1] = (box / 3) * 3 + pos / 3;
 		return returnCoords;
+	}
+	private static ArrayList<ArrayList<Integer>> allCombinations(ArrayList<Integer> possibilities, int length) {
+		ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
+		if (length == 0) result.add(new ArrayList<Integer>());
+		else {
+			Integer thisPick;
+			ArrayList<Integer> nextPossibilities;
+			ArrayList<ArrayList<Integer>> nextCombinations;
+			ArrayList<Integer> possibility, possibilityStart;
+			for (int i = 0, j; i < possibilities.size() - length + 1; i++) { //iterate over possible additions to the set
+				thisPick = possibilities.get(i);
+				nextPossibilities = (ArrayList<Integer>)possibilities.clone();
+				for (j = 0; j < i + 1; j++) nextPossibilities.remove(0);
+				nextCombinations = allCombinations(nextPossibilities, length - 1);
+				possibilityStart = new ArrayList<Integer>(1);
+				possibilityStart.add(thisPick);
+				for (j = 0; j < nextCombinations.size(); j++) {
+					possibility = (ArrayList<Integer>)possibilityStart.clone();
+					possibility.addAll(nextCombinations.get(j));
+					result.add(possibility);
+				}
+			}
+		}
+		return result;
 	}
 	public void killPossibilities() { //eliminates possiblities if that number exists already in the row, column, or box
 		int value;
@@ -176,63 +200,47 @@ class Sudoku {
 			}
 		}
 	}
-	//TODO: If all possibilities for a certain number in a row or column lie in the same box, no other number in that box can have that value. Similarly, if all the possibilities for a certain number in a box lie in the same row or column, no other number in that row or column can have that value.
-	public void translateExclusivity() {
-		ArrayList<Integer> occurences;
-		int firstOccurence;
-		boolean inSameBox;
-		int box;
-		int[] boxCoords;
-		for (int i = 1, j, k; i < 10; i++) { //iterate over numbers
-			for (j = 0; j < 9; i++) { //iterate over rows
-				occurences = new ArrayList<Integer>();
-				for (k = 0; k < 9; k++) { //iterate over row
-					if (this.puzzle[j][k].hasPossibility(i)) occurences.add(k / 3);
-				}
-				firstOccurence = occurences.get(0).intValue();
-				inSameBox = true;
-				for (k = 1; k < occurences.size(); k++) { //iterate over occurences
-					if (occurences.get(k).intValue() != firstOccurence) {
-						inSameBox = false;
-						break;
-					}
-				}
-				if (inSameBox) { //if all occurences are in the same box, remove all other occurences from the box
-					box = (j / 3) * 3 + firstOccurence;
-					for (k = 0; k < 9; k++) { //iterate over box
-						boxCoords = boxCoords(box, k);
-						if (boxCoords[0] != j) this.puzzle[boxCoords[0]][boxCoords[1]].removePossibility(i);
-					}
-				}
-			}
-			for (j = 0; j < 9; i++) { //iterate over columns
-				occurences = new ArrayList<Integer>();
-				for (k = 0; k < 9; k++) { //iterate over column
-					if (this.puzzle[k][j].hasPossibility(i)) occurences.add(k / 3);
-				}
-				firstOccurence = occurences.get(0).intValue();
-				inSameBox = true;
-				for (k = 1; k < occurences.size(); k++) { //iterate over occurences
-					if (occurences.get(k).intValue() != firstOccurence) {
-						inSameBox = false;
-						break;
-					}
-				}
-				if (inSameBox) { //if all occurences are in the same box, remove all other occurences from the box
-					box = (firstOccurence) * 3 + j / 3;
-					for (k = 0; k < 9; k++) { //iterate over box
-						boxCoords = boxCoords(box, k);
-						if (boxCoords[1] != j) this.puzzle[boxCoords[0]][boxCoords[1]].removePossibility(i);
-					}
+	public void guess() { //if picking a possibility creates a contradiction, discard it
+		ArrayList<Integer> possibilities;
+		Sudoku guessSudoku, lastGuessSudoku;
+		for (int i = 0, j, k; i < 9; i++) {
+			for (j = 0; j < 9; j++) {
+				possibilities = this.puzzle[i][j].getPossibilities();
+				for (k = 0; k < possibilities.size(); k++) {
+					guessSudoku = this.clone();
+					guessSudoku.puzzle[i][j].select(possibilities.get(k).intValue());
+					lastGuessSudoku = guessSudoku.clone();
+					do {
+						lastGuessSudoku = guessSudoku.clone();
+						guessSudoku.killPossibilities();
+						guessSudoku.chooseUnique();
+						guessSudoku.findContainedGroups();
+					} while (!guessSudoku.equals(lastGuessSudoku));
+					if (guessSudoku.error()) this.puzzle[i][j].removePossibility(possibilities.get(k).intValue());
 				}
 			}
 		}
 	}
-	//TODO: If a set of squares in a row, column, or box contains the only ones that can have certain numbers (and there are as many of these numbers as squares), those squares cannot be anything else
+	private boolean error() {
+		for (int i = 0, j; i < 9; i++) {
+			for (j = 0; j < 9; j++) {
+				if (this.puzzle[i][j].getPossibilities().size() == 0) return true;
+			}
+		}
+		return false;
+	}
 	public boolean equals(Sudoku other) {
 		for (int i = 0, j; i < 9; i++) {
 			for (j = 0; j < 9; j++) {
 				if (!this.puzzle[i][j].equals(other.puzzle[i][j])) return false;
+			}
+		}
+		return true;
+	}
+	public boolean done() {
+		for (int i = 0, j; i < 9; i++) {
+			for (j = 0; j < 9; j++) {
+				if (this.puzzle[i][j].empty()) return false;
 			}
 		}
 		return true;
@@ -264,29 +272,5 @@ class Sudoku {
 				System.out.println("---+---+---++---+---+---++---+---+---");
 			}
 		}
-	}
-	public static ArrayList<ArrayList<Integer>> allCombinations(ArrayList<Integer> possibilities, int length) {
-		ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
-		if (length == 0) result.add(new ArrayList<Integer>());
-		else {
-			Integer thisPick;
-			ArrayList<Integer> nextPossibilities;
-			ArrayList<ArrayList<Integer>> nextCombinations;
-			ArrayList<Integer> possibility, possibilityStart;
-			for (int i = 0, j; i < possibilities.size() - length + 1; i++) { //iterate over possible additions to the set
-				thisPick = possibilities.get(i);
-				nextPossibilities = (ArrayList<Integer>)possibilities.clone();
-				for (j = 0; j < i + 1; j++) nextPossibilities.remove(0);
-				nextCombinations = allCombinations(nextPossibilities, length - 1);
-				possibilityStart = new ArrayList<Integer>(1);
-				possibilityStart.add(thisPick);
-				for (j = 0; j < nextCombinations.size(); j++) {
-					possibility = (ArrayList<Integer>)possibilityStart.clone();
-					possibility.addAll(nextCombinations.get(j));
-					result.add(possibility);
-				}
-			}
-		}
-		return result;
 	}
 }
