@@ -1,3 +1,4 @@
+import java.util.Scanner;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -7,6 +8,26 @@ class Run {
 		if (args.length != 1) {
 			System.out.println("Correct usage:");
 			System.out.println("\tjava Run puzzles.txt");
+			System.out.println("or\tjava Run --input");
+			return;
+		}
+		if (args[0].equals("--input")) {
+		    System.out.println("Enter puzzle:");
+		    Scanner scanner = new Scanner(System.in);
+		    scanner.useDelimiter("\n");
+		    String[] rowStrings = new String[9];
+		    for (int i = 0; i < 9; i++) rowStrings[i] = scanner.next();
+		    scanner.close();
+		    Sudoku sudoku = new Sudoku(rowStrings), lastSudoku = new Sudoku(rowStrings);
+			do {
+				lastSudoku = sudoku.clone();
+				sudoku.killPossibilities();
+				sudoku.chooseUnique();
+				sudoku.findContainedGroups();
+				sudoku.guess();
+			} while (!sudoku.equals(lastSudoku));
+			sudoku.print();
+			System.out.println(sudoku.done());
 			return;
 		}
 		try {
@@ -49,6 +70,9 @@ class Run {
 		}
 		catch (IOException e) {
 			System.out.println("Error reading file");
+			System.out.println("Correct usage:");
+			System.out.println("\tjava Run puzzles.txt");
+			System.out.println("or\tjava Run --input");
 		}
 	}
 }
