@@ -18,11 +18,14 @@ class Sudoku {
 		}
 	}
 
-	private static int[] boxCoords(int box, int pos) {
-		int[] returnCoords = new int[2];
-		returnCoords[0] = (box % 3) * 3 + pos % 3;
-		returnCoords[1] = (box / 3) * 3 + pos / 3;
-		return returnCoords;
+	private Square getByRow(int row, int pos) {
+		return this.puzzle[row][pos];
+	}
+	private Square getByCol(int col, int pos) {
+		return this.puzzle[pos][col];
+	}
+	private Square getByBox(int box, int pos) {
+		return this.puzzle[(box / 3) * 3 + pos / 3][(box % 3) * 3 + pos % 3];
 	}
 	private static ArrayList<ArrayList<Integer>> allCombinations(ArrayList<Integer> possibilities, int length) {
 		ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
@@ -50,23 +53,21 @@ class Sudoku {
 	}
 	public void killPossibilities() { //eliminates possiblities if that number exists already in the row, column, or box
 		int value;
-		int baseI, baseJ, newI, newJ;
+		int box, pos;
 		for (int i = 0, j, k; i < 9; i++) { //iterate over rows
 			for (j = 0; j < 9; j++) { //iterate over columns
 				value = this.puzzle[i][j].getValue();
 				if (value != 0) {
 					for (k = 0; k < 9; k++) { //iterate over row
-						if (i != k) this.puzzle[k][j].removePossibility(value);
+						if (j != k) this.getByRow(i, k).removePossibility(value);
 					}
 					for (k = 0; k < 9; k++) { //iterate over column
-						if (j != k) this.puzzle[i][k].removePossibility(value);
+						if (i != k) this.getByCol(j, k).removePossibility(value);
 					}
-					baseI = (i / 3) * 3;
-					baseJ = (j / 3) * 3;
+					box = (i / 3) * 3 + (j / 3);
+					pos = (i % 3) * 3 + (j % 3);
 					for (k = 0; k < 9; k++) { //iterate over box
-						newI = baseI + k % 3;
-						newJ = baseJ + k / 3;
-						if (newI != i && newJ != j) this.puzzle[newI][newJ].removePossibility(value);
+						if (pos != k) this.getByBox(box, k).removePossibility(value);
 					}
 				}
 			}
@@ -75,41 +76,36 @@ class Sudoku {
 	public void chooseUnique() { //if only one square can be a specific number in the row, column, or box, it must be that number
 		int tally;
 		int index = 0;
-		int[] boxCoords;
 		for (int i = 1, j, k; i < 10; i++) { //iterate over numbers
 			for (j = 0; j < 9; j++) { //iterate over rows
 				tally = 0;
 				for (k = 0; k < 9; k++) { //iterate over row
-					if (this.puzzle[j][k].hasPossibility(i)) {
+					if (this.getByRow(j, k).hasPossibility(i)) {
 						tally++;
 						index = k;
 					}
 				}
-				if (tally == 1) this.puzzle[j][index].select(i);
+				if (tally == 1) this.getByRow(j, index).select(i);
 			}
 			for (j = 0; j < 9; j++) { //iterate over columns
 				tally = 0;
 				for (k = 0; k < 9; k++) { //iterate over column
-					if (this.puzzle[k][j].hasPossibility(i)) {
+					if (this.getByCol(j, k).hasPossibility(i)) {
 						tally++;
 						index = k;
 					}
 				}
-				if (tally == 1) this.puzzle[index][j].select(i);
+				if (tally == 1) this.getByCol(j, index).select(i);
 			}
 			for (j = 0; j < 9; j++) { //iterate over boxes
 				tally = 0;
 				for (k = 0; k < 9; k++) { //iterate over box
-					boxCoords = boxCoords(j, k);
-					if (this.puzzle[boxCoords[0]][boxCoords[1]].hasPossibility(i)) {
+					if (this.getByBox(j, k).hasPossibility(i)) {
 						tally++;
 						index = k;
 					}
 				}
-				if (tally == 1) {
-					boxCoords = boxCoords(j, index);
-					this.puzzle[boxCoords[0]][boxCoords[1]].select(i);
-				}
+				if (tally == 1) this.getByBox(j, index).select(i);
 			}
 		}
 	}
@@ -121,14 +117,14 @@ class Sudoku {
 		for (i = 0; i < 9; i++) { //iterate over rows
 			unknownSquares = new ArrayList<Integer>();
 			for (j = 0; j < 9; j++) { //iterate over row
-				if (this.puzzle[i][j].empty()) unknownSquares.add(new Integer(j));
+				if (this.getByRow(i, j).empty()) unknownSquares.add(new Integer(j));
 			}
 			for (j = 2; j < unknownSquares.size(); j++) { //iterate over lengths of possible combinations
 				combinations = allCombinations(unknownSquares, j);
 				for (k = 0; k < combinations.size(); k++) { //iterate over each combination
 					totalPossibilities = new ArrayList<Integer>();
 					for (l = 0; l < combinations.get(k).size(); l++) { //iterate over each square in the combination
-						squarePossibilities = this.puzzle[i][combinations.get(k).get(l)].getPossibilities();
+						squarePossibilities = this.getByRow(i, combinations.get(k).get(l)).getPossibilities();
 						for (m = 0; m < squarePossibilities.size(); m++) { //iterate over each possibility for the square
 							if (!totalPossibilities.contains(squarePossibilities.get(m))) totalPossibilities.add(squarePossibilities.get(m));
 						}
@@ -136,7 +132,7 @@ class Sudoku {
 					if (totalPossibilities.size() == j) { //f the possibilities are contained in those squares
 						for (l = 0; l < 9; l++) { //iterate over squares in the row
 							if (!combinations.get(k).contains(new Integer(l))) { //if not one of the squares in the combination
-								for (m = 0; m < totalPossibilities.size(); m++) this.puzzle[i][l].removePossibility(totalPossibilities.get(m).intValue()); //remove every used possibility
+								for (m = 0; m < totalPossibilities.size(); m++) this.getByRow(i, l).removePossibility(totalPossibilities.get(m).intValue()); //remove every used possibility
 							}
 						}
 					}
@@ -146,14 +142,14 @@ class Sudoku {
 		for (i = 0; i < 9; i++) { //iterate over columns
 			unknownSquares = new ArrayList<Integer>();
 			for (j = 0; j < 9; j++) { //iterate over column
-				if (this.puzzle[j][i].empty()) unknownSquares.add(new Integer(j));
+				if (this.getByCol(i, j).empty()) unknownSquares.add(new Integer(j));
 			}
 			for (j = 2; j < unknownSquares.size(); j++) { //iterate over lengths of possible combinations
 				combinations = allCombinations(unknownSquares, j);
 				for (k = 0; k < combinations.size(); k++) { //iterate over each combination
 					totalPossibilities = new ArrayList<Integer>();
 					for (l = 0; l < combinations.get(k).size(); l++) { //iterate over each square in the combination
-						squarePossibilities = this.puzzle[combinations.get(k).get(l)][i].getPossibilities();
+						squarePossibilities = this.getByCol(i, combinations.get(k).get(l)).getPossibilities();
 						for (m = 0; m < squarePossibilities.size(); m++) { //iterate over each possibility for the square
 							if (!totalPossibilities.contains(squarePossibilities.get(m))) totalPossibilities.add(squarePossibilities.get(m));
 						}
@@ -161,27 +157,24 @@ class Sudoku {
 					if (totalPossibilities.size() == j) { //f the possibilities are contained in those squares
 						for (l = 0; l < 9; l++) { //iterate over squares in the column
 							if (!combinations.get(k).contains(new Integer(l))) { //if not one of the squares in the combination
-								for (m = 0; m < totalPossibilities.size(); m++) this.puzzle[l][i].removePossibility(totalPossibilities.get(m).intValue()); //remove every used possibility
+								for (m = 0; m < totalPossibilities.size(); m++) this.getByCol(i, l).removePossibility(totalPossibilities.get(m).intValue()); //remove every used possibility
 							}
 						}
 					}
 				}
 			}
 		}
-		int[] boxCoords;
 		for (i = 0; i < 9; i++) { //iterate over boxes
 			unknownSquares = new ArrayList<Integer>();
 			for (j = 0; j < 9; j++) { //iterate over box
-				boxCoords = boxCoords(i, j);
-				if (this.puzzle[boxCoords[0]][boxCoords[1]].empty()) unknownSquares.add(new Integer(j));
+				if (this.getByBox(i, j).empty()) unknownSquares.add(new Integer(j));
 			}
 			for (j = 2; j < unknownSquares.size(); j++) { //iterate over lengths of possible combinations
 				combinations = allCombinations(unknownSquares, j);
 				for (k = 0; k < combinations.size(); k++) { //iterate over each combination
 					totalPossibilities = new ArrayList<Integer>();
 					for (l = 0; l < combinations.get(k).size(); l++) { //iterate over each square in the combination
-						boxCoords = boxCoords(i, combinations.get(k).get(l));
-						squarePossibilities = this.puzzle[boxCoords[0]][boxCoords[1]].getPossibilities();
+						squarePossibilities = this.getByBox(i, combinations.get(k).get(l)).getPossibilities();
 						for (m = 0; m < squarePossibilities.size(); m++) { //iterate over each possibility for the square
 							if (!totalPossibilities.contains(squarePossibilities.get(m))) totalPossibilities.add(squarePossibilities.get(m));
 						}
@@ -189,10 +182,7 @@ class Sudoku {
 					if (totalPossibilities.size() == j) { //f the possibilities are contained in those squares
 						for (l = 0; l < 9; l++) { //iterate over squares in the box
 							if (!combinations.get(k).contains(new Integer(l))) { //if not one of the squares in the combination
-								for (m = 0; m < totalPossibilities.size(); m++) { //remove every used possibility
-									boxCoords = boxCoords(i, l);
-									this.puzzle[boxCoords[0]][boxCoords[1]].removePossibility(totalPossibilities.get(m).intValue());
-								}
+								for (m = 0; m < totalPossibilities.size(); m++) this.getByBox(i, l).removePossibility(totalPossibilities.get(m).intValue());
 							}
 						}
 					}
