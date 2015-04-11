@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashSet;
 
 class Sudoku {
 	private Square[][] puzzle;
@@ -13,7 +14,7 @@ class Sudoku {
 			for (j = 0; j < 9; j++) {
 				squareString = rowStrings[i].substring(j, j + 1);
 				if (squareString.equals(" ")) puzzle[i][j] = new Square(0);
-				else puzzle[i][j] = new Square(new Integer(squareString).intValue());
+				else puzzle[i][j] = new Square(Integer.valueOf(squareString).intValue());
 			}
 		}
 	}
@@ -27,24 +28,24 @@ class Sudoku {
 	private Square getByBox(int box, int pos) {
 		return this.puzzle[(box / 3) * 3 + pos / 3][(box % 3) * 3 + pos % 3];
 	}
-	private static ArrayList<ArrayList<Integer>> allCombinations(ArrayList<Integer> possibilities, int length) {
-		ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
-		if (length == 0) result.add(new ArrayList<Integer>());
+	private static HashSet<HashSet<Integer>> allCombinations(ArrayList<Integer> possibilities, int length) {
+		HashSet<HashSet<Integer>> result = new HashSet<HashSet<Integer>>();
+		if (length == 0) result.add(new HashSet<Integer>());
 		else {
 			Integer thisPick;
 			ArrayList<Integer> nextPossibilities;
-			ArrayList<ArrayList<Integer>> nextCombinations;
-			ArrayList<Integer> possibility, possibilityStart;
-			for (int i = 0, j; i < possibilities.size() - length + 1; i++) { //iterate over possible additions to the set
+			HashSet<HashSet<Integer>> nextCombinations;
+			HashSet<Integer> possibility, possibilityStart;
+			for (int i = 0, j; i < possibilities.size(); i++) { //iterate over possible additions to the set
 				thisPick = possibilities.get(i);
 				nextPossibilities = (ArrayList<Integer>)possibilities.clone();
 				for (j = 0; j < i + 1; j++) nextPossibilities.remove(0);
 				nextCombinations = allCombinations(nextPossibilities, length - 1);
-				possibilityStart = new ArrayList<Integer>(1);
+				possibilityStart = new HashSet<Integer>(1);
 				possibilityStart.add(thisPick);
-				for (j = 0; j < nextCombinations.size(); j++) {
-					possibility = (ArrayList<Integer>)possibilityStart.clone();
-					possibility.addAll(nextCombinations.get(j));
+				for (HashSet<Integer> nextCombination : nextCombinations) {
+					possibility = (HashSet<Integer>)possibilityStart.clone();
+					possibility.addAll(nextCombination);
 					result.add(possibility);
 				}
 			}
@@ -112,27 +113,26 @@ class Sudoku {
 	public void findContainedGroups() { //if the size of the union of possibilities for some number of squares in a row, column, or box is that number, then no other squares in that row, column, or box can have any of those values
 		int i, j, k, l, m;
 		ArrayList<Integer> unknownSquares;
-		ArrayList<ArrayList<Integer>> combinations;
-		ArrayList<Integer> totalPossibilities, squarePossibilities;
+		HashSet<HashSet<Integer>> combinations;
+		HashSet<Integer> totalPossibilities;
+		HashSet<Integer> squarePossibilities;
 		for (i = 0; i < 9; i++) { //iterate over rows
 			unknownSquares = new ArrayList<Integer>();
 			for (j = 0; j < 9; j++) { //iterate over row
-				if (this.getByRow(i, j).empty()) unknownSquares.add(new Integer(j));
+				if (this.getByRow(i, j).empty()) unknownSquares.add(Integer.valueOf(j));
 			}
 			for (j = 2; j < unknownSquares.size(); j++) { //iterate over lengths of possible combinations
 				combinations = allCombinations(unknownSquares, j);
-				for (k = 0; k < combinations.size(); k++) { //iterate over each combination
-					totalPossibilities = new ArrayList<Integer>();
-					for (l = 0; l < combinations.get(k).size(); l++) { //iterate over each square in the combination
-						squarePossibilities = this.getByRow(i, combinations.get(k).get(l)).getPossibilities();
-						for (m = 0; m < squarePossibilities.size(); m++) { //iterate over each possibility for the square
-							if (!totalPossibilities.contains(squarePossibilities.get(m))) totalPossibilities.add(squarePossibilities.get(m));
-						}
+				for (HashSet<Integer> combination : combinations) { //iterate over each combination
+					totalPossibilities = new HashSet<Integer>();
+					for (Integer square : combination) { //iterate over each square in the combination
+						squarePossibilities = this.getByRow(i, square.intValue()).getPossibilities();
+						totalPossibilities.addAll(squarePossibilities);
 					}
 					if (totalPossibilities.size() == j) { //f the possibilities are contained in those squares
-						for (l = 0; l < 9; l++) { //iterate over squares in the row
-							if (!combinations.get(k).contains(new Integer(l))) { //if not one of the squares in the combination
-								for (m = 0; m < totalPossibilities.size(); m++) this.getByRow(i, l).removePossibility(totalPossibilities.get(m).intValue()); //remove every used possibility
+						for (k = 0; k < 9; k++) { //iterate over squares in the row
+							if (!combination.contains(Integer.valueOf(k))) { //if not one of the squares in the combination
+								for (Integer possibility : totalPossibilities) this.getByRow(i, k).removePossibility(possibility.intValue()); //remove every used possibility
 							}
 						}
 					}
@@ -142,22 +142,20 @@ class Sudoku {
 		for (i = 0; i < 9; i++) { //iterate over columns
 			unknownSquares = new ArrayList<Integer>();
 			for (j = 0; j < 9; j++) { //iterate over column
-				if (this.getByCol(i, j).empty()) unknownSquares.add(new Integer(j));
+				if (this.getByCol(i, j).empty()) unknownSquares.add(Integer.valueOf(j));
 			}
 			for (j = 2; j < unknownSquares.size(); j++) { //iterate over lengths of possible combinations
 				combinations = allCombinations(unknownSquares, j);
-				for (k = 0; k < combinations.size(); k++) { //iterate over each combination
-					totalPossibilities = new ArrayList<Integer>();
-					for (l = 0; l < combinations.get(k).size(); l++) { //iterate over each square in the combination
-						squarePossibilities = this.getByCol(i, combinations.get(k).get(l)).getPossibilities();
-						for (m = 0; m < squarePossibilities.size(); m++) { //iterate over each possibility for the square
-							if (!totalPossibilities.contains(squarePossibilities.get(m))) totalPossibilities.add(squarePossibilities.get(m));
-						}
+				for (HashSet<Integer> combination : combinations) { //iterate over each combination
+					totalPossibilities = new HashSet<Integer>();
+					for (Integer square : combination) { //iterate over each square in the combination
+						squarePossibilities = this.getByCol(i, square.intValue()).getPossibilities();
+						totalPossibilities.addAll(squarePossibilities);
 					}
 					if (totalPossibilities.size() == j) { //f the possibilities are contained in those squares
-						for (l = 0; l < 9; l++) { //iterate over squares in the column
-							if (!combinations.get(k).contains(new Integer(l))) { //if not one of the squares in the combination
-								for (m = 0; m < totalPossibilities.size(); m++) this.getByCol(i, l).removePossibility(totalPossibilities.get(m).intValue()); //remove every used possibility
+						for (k = 0; k < 9; k++) { //iterate over squares in the column
+							if (!combination.contains(Integer.valueOf(k))) { //if not one of the squares in the combination
+								for (Integer possibility : totalPossibilities) this.getByCol(i, k).removePossibility(possibility.intValue()); //remove every used possibility
 							}
 						}
 					}
@@ -167,22 +165,20 @@ class Sudoku {
 		for (i = 0; i < 9; i++) { //iterate over boxes
 			unknownSquares = new ArrayList<Integer>();
 			for (j = 0; j < 9; j++) { //iterate over box
-				if (this.getByBox(i, j).empty()) unknownSquares.add(new Integer(j));
+				if (this.getByBox(i, j).empty()) unknownSquares.add(Integer.valueOf(j));
 			}
 			for (j = 2; j < unknownSquares.size(); j++) { //iterate over lengths of possible combinations
 				combinations = allCombinations(unknownSquares, j);
-				for (k = 0; k < combinations.size(); k++) { //iterate over each combination
-					totalPossibilities = new ArrayList<Integer>();
-					for (l = 0; l < combinations.get(k).size(); l++) { //iterate over each square in the combination
-						squarePossibilities = this.getByBox(i, combinations.get(k).get(l)).getPossibilities();
-						for (m = 0; m < squarePossibilities.size(); m++) { //iterate over each possibility for the square
-							if (!totalPossibilities.contains(squarePossibilities.get(m))) totalPossibilities.add(squarePossibilities.get(m));
-						}
+				for (HashSet<Integer> combination : combinations) { //iterate over each combination
+					totalPossibilities = new HashSet<Integer>();
+					for (Integer square : combination) { //iterate over each square in the combination
+						squarePossibilities = this.getByBox(i, square.intValue()).getPossibilities();
+						totalPossibilities.addAll(squarePossibilities);
 					}
 					if (totalPossibilities.size() == j) { //f the possibilities are contained in those squares
-						for (l = 0; l < 9; l++) { //iterate over squares in the box
-							if (!combinations.get(k).contains(new Integer(l))) { //if not one of the squares in the combination
-								for (m = 0; m < totalPossibilities.size(); m++) this.getByBox(i, l).removePossibility(totalPossibilities.get(m).intValue());
+						for (k = 0; k < 9; k++) { //iterate over squares in the box
+							if (!combination.contains(Integer.valueOf(k))) { //if not one of the squares in the combination
+								for (Integer possibility : totalPossibilities) this.getByBox(i, k).removePossibility(possibility.intValue()); //remove every used possibility
 							}
 						}
 					}
@@ -191,14 +187,14 @@ class Sudoku {
 		}
 	}
 	public void guess() { //if picking a possibility creates a contradiction, discard it
-		ArrayList<Integer> possibilities;
+		HashSet<Integer> possibilities;
 		Sudoku guessSudoku, lastGuessSudoku;
 		for (int i = 0, j, k; i < 9; i++) {
 			for (j = 0; j < 9; j++) {
 				possibilities = this.puzzle[i][j].getPossibilities();
-				for (k = 0; k < possibilities.size(); k++) {
+				for (Integer possibility : possibilities) {
 					guessSudoku = this.clone();
-					guessSudoku.puzzle[i][j].select(possibilities.get(k).intValue());
+					guessSudoku.puzzle[i][j].select(possibility.intValue());
 					lastGuessSudoku = guessSudoku.clone();
 					do {
 						lastGuessSudoku = guessSudoku.clone();
@@ -206,7 +202,7 @@ class Sudoku {
 						guessSudoku.chooseUnique();
 						guessSudoku.findContainedGroups();
 					} while (!guessSudoku.equals(lastGuessSudoku));
-					if (guessSudoku.error()) this.puzzle[i][j].removePossibility(possibilities.get(k).intValue());
+					if (guessSudoku.error()) this.puzzle[i][j].removePossibility(possibility.intValue());
 				}
 			}
 		}
