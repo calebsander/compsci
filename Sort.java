@@ -99,22 +99,27 @@ class Sort {
 		insertionSort(insertionTest);
 		long endTime = new Date().getTime();
 		long insertionTime = endTime - startTime;
-		startTime = endTime;
+		System.out.println("I");
+		startTime = new Date().getTime();
 		selectionSort(selectionTest);
 		endTime = new Date().getTime();
 		long selectionTime = endTime - startTime;
-		startTime = endTime;
+		System.out.println("S");
+		startTime = new Date().getTime();
 		mergeTest = mergeSort(mergeTest);
 		endTime = new Date().getTime();
 		long mergeTime = endTime - startTime;
-		startTime = endTime;
+		System.out.println("M");
+		startTime = new Date().getTime();
 		quickTest = quickSort(quickTest);
 		endTime = new Date().getTime();
 		long quickTime = endTime - startTime;
-		startTime = endTime;
+		System.out.println("Q");
+		startTime = new Date().getTime();
 		bubbleSort(bubbleTest);
 		endTime = new Date().getTime();
 		long bubbleTime = endTime - startTime;
+		System.out.println("B");
 		/*for (int i = 0; i < test.size(); i++) {
 			System.out.print("O: ");
 			System.out.print(test.get(i));
@@ -129,15 +134,15 @@ class Sort {
 			System.out.print("\tB: ");
 			System.out.println(bubbleTest.get(i));
 		}*/
-		System.out.print("\tI: ");
+		System.out.print("I: ");
 		System.out.print(insertionTime);
-		System.out.print("\tS: ");
+		System.out.print("  S: ");
 		System.out.print(selectionTime);
-		System.out.print("\tM: ");
+		System.out.print("  M: ");
 		System.out.print(mergeTime);
-		System.out.print("\tQ: ");
+		System.out.print("  Q: ");
 		System.out.print(quickTime);
-		System.out.print("\tB: ");
-		System.out.print(bubbleTime);
+		System.out.print("  B: ");
+		System.out.println(bubbleTime);
 	}
 }
