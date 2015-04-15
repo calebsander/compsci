@@ -70,6 +70,22 @@ class Sort {
 		lessList.addAll(quickSort(moreList));
 		return lessList;
 	}
+	public static void bubbleSort(ArrayList<Integer> input) {
+		boolean changed = true;
+		Integer temp;
+		int i;
+		while (changed) {
+			changed = false;
+			for (i = 1; i < input.size(); i++) {
+				if (input.get(i).compareTo(input.get(i - 1)) < 0) {
+					temp = input.get(i);
+					input.set(i, input.get(i - 1));
+					input.set(i - 1, temp);
+					changed = true;
+				}
+			}
+		}
+	}
 	public static void main(String[] args) {
 		final int elements = 100000;
 		ArrayList<Integer> test = new ArrayList<Integer>(elements);
@@ -78,6 +94,7 @@ class Sort {
 		ArrayList<Integer> selectionTest = (ArrayList<Integer>)test.clone();
 		ArrayList<Integer> mergeTest = (ArrayList<Integer>)test.clone();
 		ArrayList<Integer> quickTest = (ArrayList<Integer>)test.clone();
+		ArrayList<Integer> bubbleTest = (ArrayList<Integer>)test.clone();
 		long startTime = new Date().getTime();
 		insertionSort(insertionTest);
 		long endTime = new Date().getTime();
@@ -94,7 +111,11 @@ class Sort {
 		quickTest = quickSort(quickTest);
 		endTime = new Date().getTime();
 		long quickTime = endTime - startTime;
-		/*for (int i = 0; i < insertionTest.size(); i++) {
+		startTime = endTime;
+		bubbleSort(bubbleTest);
+		endTime = new Date().getTime();
+		long bubbleTime = endTime - startTime;
+		/*for (int i = 0; i < test.size(); i++) {
 			System.out.print("O: ");
 			System.out.print(test.get(i));
 			System.out.print("\tI: ");
@@ -104,7 +125,9 @@ class Sort {
 			System.out.print("\tM: ");
 			System.out.print(mergeTest.get(i));
 			System.out.print("\tQ: ");
-			System.out.println(quickTest.get(i));
+			System.out.print(quickTest.get(i));
+			System.out.print("\tB: ");
+			System.out.println(bubbleTest.get(i));
 		}*/
 		System.out.print("\tI: ");
 		System.out.print(insertionTime);
@@ -114,5 +137,7 @@ class Sort {
 		System.out.print(mergeTime);
 		System.out.print("\tQ: ");
 		System.out.print(quickTime);
+		System.out.print("\tB: ");
+		System.out.print(bubbleTime);
 	}
 }
