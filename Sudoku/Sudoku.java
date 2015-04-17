@@ -1,13 +1,13 @@
 import java.util.ArrayList;
 import java.util.HashSet;
 
-class Sudoku {
+class Puzzle {
 	private Square[][] puzzle;
 
-	Sudoku(Square[][] puzzle) {
+	Puzzle(Square[][] puzzle) { //only used for internal cloning
 		this.puzzle = puzzle;
 	}
-	Sudoku(String[] rowStrings) {
+	Puzzle(String[] rowStrings) { //creates a puzzle where each string represents a row and each character should either be a number or a space
 		this.puzzle = new Square[9][9];
 		String squareString;
 		for (int i = 0, j; i < 9; i++) {
@@ -19,33 +19,33 @@ class Sudoku {
 		}
 	}
 
-	private Square getByRow(int row, int pos) {
+	private Square getByRow(int row, int pos) { //utility function for getting a certain element of a certain row
 		return this.puzzle[row][pos];
 	}
-	private Square getByCol(int col, int pos) {
+	private Square getByCol(int col, int pos) { //utility function for getting a certain element of a certain column
 		return this.puzzle[pos][col];
 	}
-	private Square getByBox(int box, int pos) {
+	private Square getByBox(int box, int pos) { //utility function for getting a certain element of a certain box
 		return this.puzzle[(box / 3) * 3 + pos / 3][(box % 3) * 3 + pos % 3];
 	}
-	private static HashSet<HashSet<Integer>> allCombinations(ArrayList<Integer> possibilities, int length) {
+	private static HashSet<HashSet<Integer>> allCombinations(ArrayList<Integer> possibilities, int length) { //possibilities is really a set, but keeping a specific order is handy to avoid double-counting
 		HashSet<HashSet<Integer>> result = new HashSet<HashSet<Integer>>();
-		if (length == 0) result.add(new HashSet<Integer>());
-		else {
+		if (length == 0) result.add(new HashSet<Integer>()); //only one way to pick 0 elements: the empty set
+		else { //otherwise, for each element a, find the possible ways to pick the remaining elements from the elements that come after a, add a to each of those sets, then add that set to the list of possibilities
 			Integer thisPick;
 			ArrayList<Integer> nextPossibilities;
 			HashSet<HashSet<Integer>> nextCombinations;
 			HashSet<Integer> possibility, possibilityStart;
-			for (int i = 0, j; i < possibilities.size(); i++) { //iterate over possible additions to the set
+			for (int i = 0, j; i < possibilities.size() - length + 1; i++) { //iterate over possible additions to the set
 				thisPick = possibilities.get(i);
 				nextPossibilities = (ArrayList<Integer>)possibilities.clone();
-				for (j = 0; j < i + 1; j++) nextPossibilities.remove(0);
-				nextCombinations = allCombinations(nextPossibilities, length - 1);
-				possibilityStart = new HashSet<Integer>(1);
+				for (j = 0; j < i + 1; j++) nextPossibilities.remove(0); //remove all elements up to and including the current one
+				nextCombinations = allCombinations(nextPossibilities, length - 1); //find ways to pick the rest of the members of the combination from the remaining numbers
+				possibilityStart = new HashSet<Integer>(1); //stores the current possibility as a set to which to append more members
 				possibilityStart.add(thisPick);
-				for (HashSet<Integer> nextCombination : nextCombinations) {
+				for (HashSet<Integer> nextCombination : nextCombinations) { //iterate over possible ways to pick from the remaining numbers
 					possibility = (HashSet<Integer>)possibilityStart.clone();
-					possibility.addAll(nextCombination);
+					possibility.addAll(nextCombination); //union the selected combination with the current number
 					result.add(possibility);
 				}
 			}
@@ -188,26 +188,26 @@ class Sudoku {
 	}
 	public void guess() { //if picking a possibility creates a contradiction, discard it
 		HashSet<Integer> possibilities;
-		Sudoku guessSudoku, lastGuessSudoku;
-		for (int i = 0, j, k; i < 9; i++) {
+		Puzzle guessPuzzle, lastGuessPuzzle;
+		for (int i = 0, j, k; i < 9; i++) { //iterate over squares by iterating the two address variables
 			for (j = 0; j < 9; j++) {
 				possibilities = this.puzzle[i][j].getPossibilities();
-				for (Integer possibility : possibilities) {
-					guessSudoku = this.clone();
-					guessSudoku.puzzle[i][j].select(possibility.intValue());
-					lastGuessSudoku = guessSudoku.clone();
-					do {
-						lastGuessSudoku = guessSudoku.clone();
-						guessSudoku.killPossibilities();
-						guessSudoku.chooseUnique();
-						guessSudoku.findContainedGroups();
-					} while (!guessSudoku.equals(lastGuessSudoku));
-					if (guessSudoku.error()) this.puzzle[i][j].removePossibility(possibility.intValue());
+				for (Integer possibility : possibilities) { //iterate over possibilities for the square
+					guessPuzzle = this.clone(); //make a copy of this puzzle
+					guessPuzzle.puzzle[i][j].select(possibility.intValue()); //chose the possibility
+					lastGuessPuzzle = guessPuzzle.clone();
+					do { //solve the puzzle as much as possible
+						lastGuessPuzzle = guessPuzzle.clone();
+						guessPuzzle.killPossibilities();
+						guessPuzzle.chooseUnique();
+						guessPuzzle.findContainedGroups();
+					} while (!guessPuzzle.equals(lastGuessPuzzle));
+					if (guessPuzzle.error()) this.puzzle[i][j].removePossibility(possibility.intValue()); //check for puzzle being unsolvable; if so, remove this possibility from this square of the original puzzle
 				}
 			}
 		}
 	}
-	private boolean error() {
+	private boolean error() { //if any of the squares have no possibilities, puzzle is unsolvable.
 		for (int i = 0, j; i < 9; i++) {
 			for (j = 0; j < 9; j++) {
 				if (this.puzzle[i][j].getPossibilities().size() == 0) return true;
@@ -215,7 +215,7 @@ class Sudoku {
 		}
 		return false;
 	}
-	public boolean equals(Sudoku other) {
+	public boolean equals(Puzzle other) { //two puzzles are equal if each square is equal
 		for (int i = 0, j; i < 9; i++) {
 			for (j = 0; j < 9; j++) {
 				if (!this.puzzle[i][j].equals(other.puzzle[i][j])) return false;
@@ -223,7 +223,7 @@ class Sudoku {
 		}
 		return true;
 	}
-	public boolean done() {
+	public boolean done() { //returns whether every square has been solved
 		for (int i = 0, j; i < 9; i++) {
 			for (j = 0; j < 9; j++) {
 				if (this.puzzle[i][j].empty()) return false;
@@ -231,14 +231,14 @@ class Sudoku {
 		}
 		return true;
 	}
-	public Sudoku clone() {
+	public Puzzle clone() { //clones each square individualy into a new square matrix, then wraps it in a Puzzle class
 		Square[][] newPuzzle = new Square[9][9];
 		for (int i = 0, j; i < 9; i++) {
 			for (j = 0; j < 9; j++) newPuzzle[i][j] = this.puzzle[i][j].clone();
 		}
-		return new Sudoku(newPuzzle);
+		return new Puzzle(newPuzzle);
 	}
-	public void print() {
+	public void print() { //prints out the current state of the puzzle
 		for (int i = 0, j, k, l, m; i < 3; i++) { //iterates over rows of boxes
 			for (j = 0; j < 3; j++) { //iterates over individual rows
 				for (k = 0; k < 3; k++) { //iterates over 3 lines of possibilities
