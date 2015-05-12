@@ -31,8 +31,8 @@ class Pawn {
 		this.y += (id / 2) * 64;
 	}
 
-	public void move(int spaces) {
-
+	public void move(Card card) {
+		this.pos += card.getValue();
 	}
 	public void bump() {
 
@@ -42,11 +42,16 @@ class Pawn {
 		return false;
 	}
 	public void draw(Graphics2D g) {
-		g.setColor(Color.WHITE);
-		g.fillRect(x - 24, y - 24, 48, 48);
-		g.setColor(Color.BLACK);
-		g.drawRect(x - 24, y - 24, 48, 48);
-		g.setColor(this.color);
-		g.fillRect(x - 16, y - 16, 32, 32);
+		if (this.pos == 0) {
+			g.setColor(Color.WHITE);
+			g.fillRect(x - 24, y - 24, 48, 48);
+			g.setColor(Color.BLACK);
+			g.drawRect(x - 24, y - 24, 48, 48);
+			g.setColor(this.color);
+			g.fillRect(x - 16, y - 16, 32, 32);
+		}
+	}
+	public boolean clickedBy(int eX, int eY) {
+		return Math.abs(this.x - eX) < 24 && Math.abs(this.y - eY) < 24;
 	}
 }

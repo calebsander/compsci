@@ -5,16 +5,13 @@ import java.util.Map;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
-import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 
 class Board extends JPanel {
 	private HashMap<Color,HashSet<Pawn>> pawns;
@@ -22,26 +19,31 @@ class Board extends JPanel {
 	private Deck oldCards;
 	private int playerTurn;
 	private int turnState;
-	private final static int DRAW = 0;
+	private final static int DRAW       = 0;
 	private final static int SELECTPAWN = 1;
-	private final static int SELECTEND = 2;
 
-	public final static Color BACKGROUND = new Color(204, 225, 204);
-	public final static Color RED = new Color(221, 0, 0);
-	public final static Color DARK_RED = new Color(187, 0, 0);
-	public final static Color GREEN = new Color(0, 221, 0);
-	public final static Color DARK_GREEN = new Color(0, 187, 0);
-	public final static Color BLUE = new Color(0, 0, 221);
-	public final static Color DARK_BLUE = new Color(0, 0, 187);
-	public final static Color YELLOW = new Color(221, 221, 0);
+	public final static Color BACKGROUND  = new Color(204, 225, 204);
+	public final static Color RED         = new Color(221, 0, 0);
+	public final static Color DARK_RED    = new Color(187, 0, 0);
+	public final static Color GREEN       = new Color(0, 221, 0);
+	public final static Color DARK_GREEN  = new Color(0, 187, 0);
+	public final static Color BLUE        = new Color(0, 0, 221);
+	public final static Color DARK_BLUE   = new Color(0, 0, 187);
+	public final static Color YELLOW      = new Color(221, 221, 0);
 	public final static Color DARK_YELLOW = new Color(187, 187, 0);
-	private final static Color[] COLORS = {RED, BLUE, YELLOW, GREEN};
+	private final static Color[] COLORS   = {RED, BLUE, YELLOW, GREEN};
+	private static Font comicSans;
 
 	Board() {
+		Font[] systemFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+		for (Font font : systemFonts) {
+			if (font.getFontName().equals("Comic Sans MS")) this.comicSans = font.deriveFont(60.0F);
+		}
+
 		this.pawns = new HashMap<Color,HashSet<Pawn>>();
 		for (Color color : COLORS) {
-			pawns.put(color, new HashSet<Pawn>());
-			for (int j = 0; j < 4; j++) pawns.get(color).add(new Pawn(color, j));
+			this.pawns.put(color, new HashSet<Pawn>());
+			for (int j = 0; j < 4; j++) this.pawns.get(color).add(new Pawn(color, j));
 		}
 		this.newCards = new Deck(true);
 		this.newCards.shuffle();
@@ -50,39 +52,57 @@ class Board extends JPanel {
 		this.turnState = DRAW;
 		this.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
-				if (e.getX() > 368 && e.getX() < 656 && e.getY() > 288 && e.getY() < 480 && Board.this.turnState == DRAW) {
-					if (Board.this.newCards.size() == 0) {
-						Board.this.newCards = new Deck(true);
-						Board.this.newCards.shuffle();
-						Board.this.oldCards = new Deck(false);
-					}
-					Board.this.oldCards.add(Board.this.newCards.deal());
-					boolean canMove = false;
-					for (HashSet<Pawn> player : Board.this.pawns.values()) {
-						for (Pawn pawn : player) {
-							if (pawn.canMove(Board.this.oldCards.last())) {
-								canMove = true;
+				switch (Board.this.turnState) {
+					case Board.DRAW:
+						if (e.getX() > 368 && e.getX() < 656 && e.getY() > 288 && e.getY() < 480) {
+							if (Board.this.newCards.size() == 0) {
+								Board.this.newCards = new Deck(true);
+								Board.this.newCards.shuffle();
+								Board.this.oldCards = new Deck(false);
+							}
+							Board.this.oldCards.add(Board.this.newCards.deal());
+							boolean canMove = false;
+							for (HashSet<Pawn> player : Board.this.pawns.values()) {
+								for (Pawn pawn : player) {
+									if (pawn.canMove(Board.this.oldCards.last())) {
+										canMove = true;
+										break;
+									}
+								}
+							}
+							if (canMove) {
+								Board.this.turnState = Board.SELECTPAWN;
+								Board.this.displayMessage();
+							}
+							else {
+								Board.this.nextTurn();
+								Board.this.displayMessage();
+							}
+						}
+						break;
+					case Board.SELECTPAWN:
+						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[playerTurn])) {
+							if (pawn.clickedBy(e.getX(), e.getY())) {
+								pawn.move(Board.this.oldCards.last());
+								Board.this.turnState = Board.DRAW;
+								Board.this.nextTurn();
+								Board.this.displayMessage();
 								break;
 							}
 						}
-					}
-					if (canMove) {
-						Window parentWindow = SwingUtilities.windowForComponent(Board.this);
-						Frame parentFrame = null;
-						if (parentWindow instanceof Frame) parentFrame = (Frame)parentWindow;
-						JOptionPane.showMessageDialog(Board.this, "Select pawn to move");
-						Board.this.turnState = SELECTPAWN;
-					}
-					else Board.this.playerTurn = (Board.this.playerTurn + 1) % 4;
 				}
 			}
 		});
+		this.displayMessage();
 	}
 
 	public void paintComponent(Graphics gA) {
 		super.paintComponent(gA);
+
 		Graphics2D g = (Graphics2D)gA;
+		g.setFont(comicSans);
 		this.setBackground(BACKGROUND);
+
 		int i;
 		for (i = 0; i < 16; i++) {
 			g.setColor(Color.WHITE);
@@ -169,10 +189,6 @@ class Board extends JPanel {
 		g.setColor(Color.BLACK);
 		g.drawOval(64, 640, 192, 192);
 
-		Font[] systemFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-		for (Font font : systemFonts) {
-			if (font.getFontName().equals("Comic Sans MS")) g.setFont(font.deriveFont(60.0F));
-		}
 		g.setColor(Color.BLACK);
 		g.drawPolygon(new int[]{256, 512, 768, 512}, new int[]{512, 256, 512, 768}, 4);
 		this.drawCardBase(g, 368, 288);
@@ -228,5 +244,17 @@ class Board extends JPanel {
 		g.drawRect(x, y, 288, 192);
 		g.setColor(BACKGROUND);
 		g.fillRect(x + 1, y + 1, 287, 191);
+	}
+	private void nextTurn() {
+		this.playerTurn = (this.playerTurn + 1) % 4;
+	}
+	private void displayMessage() {
+		switch (this.turnState) {
+			case DRAW:
+				JOptionPane.showMessageDialog(Board.this, "Draw a card");
+				break;
+			case SELECTPAWN:
+				JOptionPane.showMessageDialog(Board.this, "Select pawn to move");
+		}
 	}
 }
