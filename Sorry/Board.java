@@ -88,6 +88,15 @@ class Board extends JPanel {
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
 							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.canMove(Board.this.oldCards.last())) {
 								pawn.move(Board.this.oldCards.last());
+								pawn.checkSlide();
+								for (Color player : Board.COLORS) {
+									for (Pawn otherPawn : Board.this.pawns.get(player)) {
+										if (!otherPawn.equals(pawn) && otherPawn.sameSquare(pawn)) {
+											otherPawn.bump();
+											break;
+										}
+									}
+								}
 								Board.this.turnState = Board.DRAW;
 								Board.this.nextTurn();
 								Board.this.displayMessage();
@@ -194,37 +203,60 @@ class Board extends JPanel {
 		g.drawOval(63, 640, 192, 192);
 
 		g.setColor(RED);
-		g.fillRect(127, 64, 64, 192);
+		g.fillRect(127, 64, 64, 384);
 		g.setColor(Color.BLACK);
-		g.drawRect(127, 64, 64, 192);
+		g.drawRect(127, 64, 64, 64);
+		g.drawRect(127, 128, 64, 64);
+		g.drawRect(127, 192, 64, 64);
+		g.drawRect(127, 256, 64, 64);
+		g.drawRect(127, 320, 64, 64);
+		g.fillRect(127, 384, 65, 64);
 		g.setColor(RED);
-		g.fillOval(64, 224, 192, 192);
+		g.fillOval(64, 384, 192, 192);
 		g.setColor(Color.BLACK);
-		g.drawOval(64, 224, 192, 192);
+		g.drawOval(64, 384, 192, 192);
+
 		g.setColor(BLUE);
-		g.fillRect(768, 128, 191, 64);
+		g.fillRect(576, 128, 383, 64);
 		g.setColor(Color.BLACK);
-		g.drawRect(768, 128, 191, 64);
+		g.drawRect(896, 128, 63, 64);
+		g.drawRect(832, 128, 64, 64);
+		g.drawRect(768, 128, 64, 64);
+		g.drawRect(704, 128, 64, 64);
+		g.drawRect(640, 128, 64, 64);
+		g.fillRect(576, 128, 64, 65);
 		g.setColor(BLUE);
-		g.fillOval(608, 64, 192, 192);
+		g.fillOval(448, 64, 192, 192);
 		g.setColor(Color.BLACK);
-		g.drawOval(608, 64, 192, 192);
+		g.drawOval(448, 64, 192, 192);
+
 		g.setColor(YELLOW);
-		g.fillRect(831, 768, 64, 192);
+		g.fillRect(831, 576, 64, 384);
 		g.setColor(Color.BLACK);
-		g.drawRect(831, 768, 64, 192);
+		g.drawRect(831, 896, 64, 64);
+		g.drawRect(831, 832, 64, 64);
+		g.drawRect(831, 768, 64, 64);
+		g.drawRect(831, 704, 64, 64);
+		g.drawRect(831, 640, 64, 64);
+		g.fillRect(831, 576, 65, 64);
 		g.setColor(YELLOW);
-		g.fillOval(767, 608, 192, 192);
+		g.fillOval(767, 448, 192, 192);
 		g.setColor(Color.BLACK);
-		g.drawOval(767, 608, 192, 192);
+		g.drawOval(767, 448, 192, 192);
+
 		g.setColor(GREEN);
-		g.fillRect(63, 832, 192, 64);
+		g.fillRect(63, 832, 384, 64);
 		g.setColor(Color.BLACK);
-		g.drawRect(63, 832, 192, 64);
+		g.drawRect(63, 832, 64, 64);
+		g.drawRect(127, 832, 64, 64);
+		g.drawRect(191, 832, 64, 64);
+		g.drawRect(255, 832, 64, 64);
+		g.drawRect(319, 832, 64, 64);
+		g.fillRect(383, 832, 64, 65);
 		g.setColor(GREEN);
-		g.fillOval(224, 768, 192, 192);
+		g.fillOval(383, 768, 192, 192);
 		g.setColor(Color.BLACK);
-		g.drawOval(224, 768, 192, 192);
+		g.drawOval(383, 768, 192, 192);
 
 		g.setColor(Color.BLACK);
 		g.drawPolygon(new int[]{256, 512, 768, 512}, new int[]{512, 256, 512, 768}, 4);
@@ -240,11 +272,11 @@ class Board extends JPanel {
 		g.setColor(Color.BLACK);
 		g.drawString("SORRY!", 400, 536);
 
-		for (HashSet<Pawn> player : this.pawns.values()) {
-			for (Pawn pawn : player) pawn.draw(g);
+		for (Color player : Board.COLORS) {
+			for (Pawn pawn : this.pawns.get(player)) pawn.draw(g);
 		}
 		g.setColor(COLORS[this.playerTurn]);
-		g.fillRect(480, 128, 64, 64);
+		g.fillRect(296, 480, 64, 64);
 		try {
 			Thread.sleep(50);
 		}

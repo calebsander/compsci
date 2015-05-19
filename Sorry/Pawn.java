@@ -14,16 +14,13 @@ class Pawn {
 	}
 
 	public void move(Card card) {
-		int pos = this.pos;
-		if (this.pos == 0) pos = 1;
-		else pos += card.getValue();
-		this.setPos(pos);
+		if (this.pos == 0) this.setPos(1);
+		else this.setPos(this.pos + card.getValue());
 	}
 	public void bump() {
 		this.setPos(0);
 	}
 	public void setPos(int pos) {
-		if (pos > 60) pos -= 60;
 		this.pos = pos;
 		if (this.pos == 0) {
 			if (this.color.equals(Board.RED)) {
@@ -135,21 +132,39 @@ class Pawn {
 				this.y = 992 - (this.pos - 57) * 64;
 			}
 		}
+		else if (this.pos < 65) {
+			if (this.color.equals(Board.RED)) {
+				this.x = 160;
+				this.y = 32 + (this.pos - 59) * 64;
+			}
+			else if (this.color.equals(Board.BLUE)) {
+				this.x = 992 - (this.pos - 59) * 64;
+				this.y = 160;
+			}
+			else if (this.color.equals(Board.YELLOW)) {
+				this.x = 864;
+				this.y = 992 - (this.pos - 59) * 64;
+			}
+			else if (this.color.equals(Board.GREEN)) {
+				this.x = 32 + (this.pos - 59) * 64;
+				this.y = 864;
+			}
+		}
 		else {
 			if (this.color.equals(Board.RED)) {
 				this.x = 128;
-				this.y = 288;
+				this.y = 448;
 			}
 			else if (this.color.equals(Board.BLUE)) {
-				this.x = 672;
+				this.x = 512;
 				this.y = 128;
 			}
 			else if (this.color.equals(Board.YELLOW)) {
 				this.x = 832;
-				this.y = 672;
+				this.y = 512;
 			}
 			else if (this.color.equals(Board.GREEN)) {
-				this.x = 288;
+				this.x = 448;
 				this.y = 832;
 			}
 			this.x += (id % 2) * 64;
@@ -172,9 +187,14 @@ class Pawn {
 	public boolean clickedBy(int eX, int eY) {
 		return Math.abs(this.x - eX) < 24 && Math.abs(this.y - eY) < 24;
 	}
-	public boolean equals(Object o) {
-		if (!(o instanceof Pawn)) return false;
-		Pawn otherPawn = (Pawn)o;
+	public boolean equals(Pawn otherPawn) {
 		return this.color.equals(otherPawn.color) && this.id == otherPawn.id;
+	}
+	public boolean sameSquare(Pawn otherPawn) {
+		return this.x == otherPawn.x && this.y == otherPawn.y;
+	}
+	public void checkSlide() {
+		if (this.pos == 6 || this.pos == 21 || this.pos == 36 || this.pos == 51) this.setPos(this.pos + 4);
+		else if (this.pos == 13 || this.pos == 28 || this.pos == 43 || this.pos == 58) this.setPos(this.pos + 3);
 	}
 }
