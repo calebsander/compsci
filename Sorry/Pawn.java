@@ -1,3 +1,5 @@
+import java.util.HashSet;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 
@@ -14,13 +16,23 @@ class Pawn {
 	}
 
 	public void move(Card card) {
-		if (this.pos == 0) this.setPos(1);
-		else this.setPos(this.pos + card.getValue());
+		int diff = 0;
+		if (this.pos == 0) diff = 1;
+		else diff = card.getValue();
+		this.setPos(this.pos + diff);
 	}
 	public void bump() {
 		this.setPos(0);
 	}
-	public void setPos(int pos) {
+	public HashSet<Pawn> setPos(int pos) {
+		HashSet<Pawn> moves = new HashSet<Pawn>();
+		Pawn tempClone;
+		for (int intermediatePos = this.pos + 1; intermediatePos < pos + 1; intermediatePos++) {
+			tempClone = this.clone();
+			tempClone.pos = intermediatePos;
+			tempClone.setPos(intermediatePos);
+			moves.add(tempClone);
+		}
 		this.pos = pos;
 		if (this.pos == 0) {
 			if (this.color.equals(Board.RED)) {
@@ -170,9 +182,10 @@ class Pawn {
 			this.x += (id % 2) * 64;
 			this.y += (id / 2) * 64;
 		}
+		return moves;
 	}
 	public boolean canMove(Card card) {
-		if (this.pos == 60) return false;
+		if (this.pos + card.getValue() > 65) return false;
 		if (this.pos == 0) return card.getValue() < 3;
 		return true;
 	}
@@ -193,8 +206,18 @@ class Pawn {
 	public boolean sameSquare(Pawn otherPawn) {
 		return this.x == otherPawn.x && this.y == otherPawn.y;
 	}
-	public void checkSlide() {
-		if (this.pos == 6 || this.pos == 21 || this.pos == 36 || this.pos == 51) this.setPos(this.pos + 4);
-		else if (this.pos == 13 || this.pos == 28 || this.pos == 43 || this.pos == 58) this.setPos(this.pos + 3);
+	public HashSet<Pawn> checkSlide() {
+		if (this.pos == 6 || this.pos == 21 || this.pos == 36 || this.pos == 51) return this.setPos(this.pos + 4);
+		if (this.pos == 13 || this.pos == 28 || this.pos == 43) return this.setPos(this.pos + 3);
+		if (this.pos == 58) return this.setPos(1);
+		return new HashSet<Pawn>();
+	}
+	public boolean isHome() {
+		return this.pos == 65;
+	}
+	protected Pawn clone() {
+		Pawn newPawn = new Pawn(this.color, this.id);
+		newPawn.setPos(this.pos);
+		return newPawn;
 	}
 }

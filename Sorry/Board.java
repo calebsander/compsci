@@ -88,12 +88,15 @@ class Board extends JPanel {
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
 							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.canMove(Board.this.oldCards.last())) {
 								pawn.move(Board.this.oldCards.last());
-								pawn.checkSlide();
+								HashSet<Pawn> moves = pawn.checkSlide();
+								moves.add(pawn);
 								for (Color player : Board.COLORS) {
 									for (Pawn otherPawn : Board.this.pawns.get(player)) {
-										if (!otherPawn.equals(pawn) && otherPawn.sameSquare(pawn)) {
-											otherPawn.bump();
-											break;
+										for (Pawn passedPosition : moves) {
+											if (!otherPawn.equals(pawn) && otherPawn.sameSquare(passedPosition)) {
+												otherPawn.bump();
+												break;
+											}
 										}
 									}
 								}
