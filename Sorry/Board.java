@@ -17,8 +17,10 @@ class Board extends JPanel {
 	private Deck oldCards;
 	private int playerTurn;
 	private int turnState;
-	private final static int DRAW       = 0;
-	private final static int SELECTPAWN = 1;
+	private int remaining;
+	private final static int DRAW          = 0;
+	private final static int SELECT_PAWN   = 1;
+	private final static int SELECT_SECOND = 2;
 
 	public final static Color BACKGROUND  = new Color(204, 225, 204);
 	public final static Color RED         = new Color(221, 0, 0);
@@ -30,8 +32,7 @@ class Board extends JPanel {
 	public final static Color YELLOW      = new Color(221, 221, 0);
 	public final static Color DARK_YELLOW = new Color(187, 187, 0);
 	private final static Color[] COLORS   = {RED, BLUE, YELLOW, GREEN};
-	private static Font comicSans;
-	private static Font comicSansSmall;
+	public static Font comicSans, comicSansSmall, comicSansTiny;
 
 	Board() {
 		Font[] systemFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
@@ -44,7 +45,8 @@ class Board extends JPanel {
 			}
 		}
 		if (!foundFont) comicSans = new Font("SansSerif", Font.PLAIN, 60);
-		comicSansSmall = comicSans.deriveFont(40.0F);
+		comicSansSmall = comicSans.deriveFont(30.0F);
+		comicSansTiny = comicSans.deriveFont(10.0F);
 
 		this.pawns = new HashMap<Color,HashSet<Pawn>>();
 		for (Color color : COLORS) {
@@ -69,25 +71,141 @@ class Board extends JPanel {
 							Board.this.oldCards.add(Board.this.newCards.deal());
 							boolean canMove = false;
 							for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
-								if (pawn.canMove(Board.this.oldCards.last())) {
+								if (pawn.canMove(Board.this.oldCards.last()) || (Board.this.oldCards.last().getValue() == 10 && pawn.canTenBackwards())) {
 									canMove = true;
 									break;
 								}
 							}
 							if (canMove) {
-								Board.this.turnState = Board.SELECTPAWN;
+								Board.this.turnState = Board.SELECT_PAWN;
 								Board.this.displayMessage();
 							}
 							else {
-								Board.this.nextTurn();
+								if (Board.this.oldCards.last().getValue() != 2) Board.this.nextTurn();
 								Board.this.displayMessage();
 							}
 						}
 						break;
-					case Board.SELECTPAWN:
+					case Board.SELECT_PAWN:
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
-							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.canMove(Board.this.oldCards.last())) {
-								pawn.move(Board.this.oldCards.last());
+							if (pawn.clickedBy(e.getX(), e.getY()) && (pawn.canMove(Board.this.oldCards.last())) || (Board.this.oldCards.last().getValue() == 10 && pawn.canTenBackwards())) {
+								if (Board.this.oldCards.last().getValue() == 7) {
+									int distance = 8;
+									while ((distance < 1 || distance > 7) || pawn.getPos() + distance > 65) distance = Integer.valueOf(JOptionPane.showInputDialog(Board.this, "How many squares to move?")).intValue();
+									pawn.move(distance);
+									HashSet<Pawn> moves = pawn.checkSlide();
+									moves.add(pawn);
+									for (Color player : Board.COLORS) {
+										for (Pawn otherPawn : Board.this.pawns.get(player)) {
+											for (Pawn passedPosition : moves) {
+												if (!otherPawn.equals(pawn) && otherPawn.sameSquare(passedPosition)) {
+													otherPawn.bump();
+													break;
+												}
+											}
+										}
+									}
+									boolean allHome = true;
+									for (Pawn friendlyPawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+										if (!friendlyPawn.isHome()) {
+											allHome = false;
+											break;
+										}
+									}
+									if (allHome) Board.this.endGame(Board.COLORS[Board.this.playerTurn]);
+									if (distance == 7) {
+										Board.this.turnState = Board.DRAW;
+										Board.this.nextTurn();
+										Board.this.displayMessage();
+									}
+									else {
+										Board.this.remaining = 7 - distance;
+										boolean canMove = false;
+										for (Pawn otherPawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+											if (otherPawn.getPos() != 0 && otherPawn.getPos() + Board.this.remaining < 66) {
+												canMove = true;
+												break;
+											}
+										}
+										if (canMove) {
+											Board.this.turnState = Board.SELECT_SECOND;
+											Board.this.displayMessage();
+										}
+										else {
+											Board.this.turnState = Board.DRAW;
+											Board.this.nextTurn();
+											Board.this.displayMessage();
+										}
+									}
+								}
+								else if (Board.this.oldCards.last().getValue() == 10) {
+									if (pawn.canMove(Board.this.oldCards.last())) {
+										if (pawn.canTenBackwards()) {
+											boolean moveForwards = JOptionPane.showConfirmDialog(Board.this, "Go forwards?", "Select an Option", 2) == JOptionPane.YES_OPTION;
+											if (moveForwards) pawn.move(10);
+											else pawn.move(-1);
+										}
+										else pawn.move(10);
+									}
+									else pawn.move(-1);
+									HashSet<Pawn> moves = pawn.checkSlide();
+									moves.add(pawn);
+									for (Color player : Board.COLORS) {
+										for (Pawn otherPawn : Board.this.pawns.get(player)) {
+											for (Pawn passedPosition : moves) {
+												if (!otherPawn.equals(pawn) && otherPawn.sameSquare(passedPosition)) {
+													otherPawn.bump();
+													break;
+												}
+											}
+										}
+									}
+									boolean allHome = true;
+									for (Pawn friendlyPawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+										if (!friendlyPawn.isHome()) {
+											allHome = false;
+											break;
+										}
+									}
+									if (allHome) Board.this.endGame(Board.COLORS[Board.this.playerTurn]);
+									Board.this.turnState = Board.DRAW;
+									Board.this.nextTurn();
+									Board.this.displayMessage();
+								}
+								else {
+									pawn.move(Board.this.oldCards.last());
+									HashSet<Pawn> moves = pawn.checkSlide();
+									moves.add(pawn);
+									for (Color player : Board.COLORS) {
+										for (Pawn otherPawn : Board.this.pawns.get(player)) {
+											for (Pawn passedPosition : moves) {
+												if (!otherPawn.equals(pawn) && otherPawn.sameSquare(passedPosition)) {
+													otherPawn.bump();
+													break;
+												}
+											}
+										}
+									}
+									boolean allHome = true;
+									for (Pawn friendlyPawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+										if (!friendlyPawn.isHome()) {
+											allHome = false;
+											break;
+										}
+									}
+									if (allHome) Board.this.endGame(Board.COLORS[Board.this.playerTurn]);
+									Board.this.turnState = Board.DRAW;
+									if (Board.this.oldCards.last().getValue() != 2) Board.this.nextTurn();
+									Board.this.displayMessage();
+								}
+								break;
+							}
+						}
+						break;
+					case Board.SELECT_SECOND:
+						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.getPos() != 0 && pawn.getPos() + Board.this.remaining < 66) {
+								pawn.move(Board.this.remaining);
 								HashSet<Pawn> moves = pawn.checkSlide();
 								moves.add(pawn);
 								for (Color player : Board.COLORS) {
@@ -100,12 +218,21 @@ class Board extends JPanel {
 										}
 									}
 								}
+								boolean allHome = true;
+								for (Pawn friendlyPawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+									if (!friendlyPawn.isHome()) {
+										allHome = false;
+										break;
+									}
+								}
+								if (allHome) Board.this.endGame(Board.COLORS[Board.this.playerTurn]);
 								Board.this.turnState = Board.DRAW;
 								Board.this.nextTurn();
 								Board.this.displayMessage();
 								break;
 							}
 						}
+
 				}
 			}
 		});
@@ -117,6 +244,7 @@ class Board extends JPanel {
 
 		Graphics2D g = (Graphics2D)gA;
 		g.setFont(comicSans);
+		g.drawString("SORRY!", 400, 536);
 		this.setBackground(BACKGROUND);
 
 		int i;
@@ -273,13 +401,23 @@ class Board extends JPanel {
 		g.fillRect(448, 320, 128, 128);
 		this.oldCards.display(g, 368, 544);
 		g.setColor(Color.BLACK);
-		g.drawString("SORRY!", 400, 536);
 
 		for (Color player : Board.COLORS) {
 			for (Pawn pawn : this.pawns.get(player)) pawn.draw(g);
 		}
 		g.setColor(COLORS[this.playerTurn]);
 		g.fillRect(296, 480, 64, 64);
+
+		g.setFont(comicSansSmall);
+		g.setColor(Color.BLACK);
+		g.drawString("START", 224, 288);
+		g.drawString("HOME", 96, 608);
+		g.drawString("START", 800, 416);
+		g.drawString("HOME", 616, 96);
+		g.drawString("START", 672, 760);
+		g.drawString("HOME", 800, 448);
+		g.drawString("START", 96, 640);
+		g.drawString("HOME", 300, 824);
 		try {
 			Thread.sleep(50);
 		}
@@ -311,10 +449,20 @@ class Board extends JPanel {
 	private void displayMessage() {
 		switch (this.turnState) {
 			case DRAW:
-				JOptionPane.showMessageDialog(Board.this, "Draw a card");
+				JOptionPane.showMessageDialog(this, "Draw a card");
 				break;
-			case SELECTPAWN:
-				JOptionPane.showMessageDialog(Board.this, "Select pawn to move");
+			case SELECT_PAWN:
+				JOptionPane.showMessageDialog(this, "Select pawn to move");
+				break;
+			case SELECT_SECOND:
+				JOptionPane.showMessageDialog(this, "Select pawn to move the remaining " + Integer.valueOf(this.remaining) + " places");
 		}
+	}
+	private void endGame(Color winnerColor) {
+		if (winnerColor.equals(RED)) JOptionPane.showMessageDialog(Board.this, "Red wins!");
+		else if (winnerColor.equals(BLUE)) JOptionPane.showMessageDialog(Board.this, "Blue wins!");
+		else if (winnerColor.equals(YELLOW)) JOptionPane.showMessageDialog(Board.this, "Yellow wins!");
+		else if (winnerColor.equals(GREEN)) JOptionPane.showMessageDialog(Board.this, "Green wins!");
+		System.exit(0);
 	}
 }

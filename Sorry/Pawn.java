@@ -12,14 +12,20 @@ class Pawn {
 	Pawn(Color color, int id) {
 		this.color = color;
 		this.id = id;
+		this.pos = 0;
 		this.setPos(0);
 	}
 
 	public void move(Card card) {
+		int value = card.getValue();
 		int diff = 0;
 		if (this.pos == 0) diff = 1;
-		else diff = card.getValue();
+		else if (value == 4) diff = -4;
+		else diff = value;
 		this.setPos(this.pos + diff);
+	}
+	public void move(int spaces) {
+		this.setPos(this.pos + spaces);
 	}
 	public void bump() {
 		this.setPos(0);
@@ -185,17 +191,23 @@ class Pawn {
 		return moves;
 	}
 	public boolean canMove(Card card) {
+		if (this.pos == 65) return false;
+		if (card.getValue() == 4) return this.pos > 4;
+		if (card.getValue() == 7) return this.pos != 0 && this.pos < 65;
 		if (this.pos + card.getValue() > 65) return false;
-		if (this.pos == 0) return card.getValue() < 3;
+		if (this.pos == 0) return card.getValue() == 1 || card.getValue() == 2;
 		return true;
+	}
+	public boolean canTenBackwards() {
+		return this.pos > 1;
 	}
 	public void draw(Graphics2D g) {
 		g.setColor(Color.WHITE);
-		g.fillRect(x - 24, y - 24, 48, 48);
+		g.fillRect(this.x - 24, this.y - 24, 48, 48);
 		g.setColor(Color.BLACK);
-		g.drawRect(x - 24, y - 24, 48, 48);
+		g.drawRect(this.x - 24, this.y - 24, 48, 48);
 		g.setColor(this.color);
-		g.fillRect(x - 16, y - 16, 32, 32);
+		g.fillRect(this.x - 16, this.y - 16, 32, 32);
 	}
 	public boolean clickedBy(int eX, int eY) {
 		return Math.abs(this.x - eX) < 24 && Math.abs(this.y - eY) < 24;
@@ -219,5 +231,8 @@ class Pawn {
 		Pawn newPawn = new Pawn(this.color, this.id);
 		newPawn.setPos(this.pos);
 		return newPawn;
+	}
+	public int getPos() {
+		return this.pos;
 	}
 }

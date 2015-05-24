@@ -207,7 +207,7 @@ class Puzzle {
 			}
 		}
 	}
-	private boolean error() { //if any of the squares have no possibilities, puzzle is unsolvable.
+	private boolean error() { //if any of the squares have no possibilities, puzzle is unsolvable
 		for (int i = 0, j; i < 9; i++) {
 			for (j = 0; j < 9; j++) {
 				if (this.puzzle[i][j].getPossibilities().size() == 0) return true;

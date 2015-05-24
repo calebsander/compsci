@@ -10,7 +10,7 @@ class Deck {
 		this.cards = new ArrayList<Card>(45);
 		if (fill) {
 			this.cards.add(new Card(1));
-			for (int i = 1, j; i < 13; i++) {
+			for (int i = 0, j; i < 13; i++) {
 				if (i == 6 || i == 9) continue;
 				for (j = 0; j < 4; j++) this.cards.add(new Card(i));
 			}
@@ -47,7 +47,22 @@ class Deck {
 			g.setColor(Color.WHITE);
 			g.fillRect(x + 8, y + 8, 272, 176);
 			g.setColor(Color.BLACK);
-			g.drawString(Integer.valueOf(this.last().getValue()).toString(), x + 120, y + 120);
+			g.drawString(this.last().getTitle(), x + 60, y + 60);
+			g.setFont(Board.comicSansTiny);
+			final int LINE_LENGTH = 55;
+			String message = this.last().getMessage();
+			String[] words = message.split(" ");
+			String currentLine = "";
+			int lineNumber = 0;
+			for (String word : words) {
+				if (currentLine.length() + 1 + word.length() > LINE_LENGTH) {
+					g.drawString(currentLine, x + 10, y + 83 + 15 * lineNumber);
+					lineNumber++;
+					currentLine = word;
+				}
+				else currentLine += " " + word;
+			}
+			g.drawString(currentLine, x + 10, y + 83 + 15 * lineNumber);
 		}
 	}
 }
