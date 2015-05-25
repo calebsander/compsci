@@ -22,9 +22,25 @@ class Pawn {
 		if (this.pos == 0) diff = 1;
 		else if (value == 4) diff = -4;
 		else diff = value;
+		if (this.pos == 100) {
+			if (diff < 0) this.pos = 60;
+			else this.pos = 0;
+		}
+		if (this.pos + diff < 1) {
+			if (this.pos + diff == 0) diff += 100;
+			else diff += 60;
+		}
 		this.setPos(this.pos + diff);
 	}
 	public void move(int spaces) {
+		if (this.pos == 100) {
+			if (spaces < 0) this.pos = 60;
+			else this.pos = 0;
+		}
+		if (this.pos + spaces < 1) {
+			if (this.pos + spaces == 0) spaces += 100;
+			else spaces += 60;
+		}
 		this.setPos(this.pos + spaces);
 	}
 	public void bump() {
@@ -168,7 +184,7 @@ class Pawn {
 				this.y = 864;
 			}
 		}
-		else {
+		else if (this.pos == 65) {
 			if (this.color.equals(Board.RED)) {
 				this.x = 128;
 				this.y = 448;
@@ -188,18 +204,37 @@ class Pawn {
 			this.x += (id % 2) * 64;
 			this.y += (id / 2) * 64;
 		}
+		else {
+			if (this.color.equals(Board.RED)) {
+				this.x = 224;
+				this.y = 32;
+			}
+			else if (this.color.equals(Board.BLUE)) {
+				this.x = 992;
+				this.y = 224;
+			}
+			else if (this.color.equals(Board.YELLOW)) {
+				this.x = 800;
+				this.y = 992;
+			}
+			else if (this.color.equals(Board.GREEN)) {
+				this.x = 32;
+				this.y = 800;
+			}
+		}
 		return moves;
 	}
 	public boolean canMove(Card card) {
 		if (this.pos == 65) return false;
-		if (card.getValue() == 4) return this.pos > 4;
+		if (this.pos == 100) return true;
+		if (card.getValue() == 4) return this.pos != 0;
 		if (card.getValue() == 7) return this.pos != 0 && this.pos < 65;
 		if (this.pos + card.getValue() > 65) return false;
 		if (this.pos == 0) return card.getValue() == 1 || card.getValue() == 2;
 		return true;
 	}
 	public boolean canTenBackwards() {
-		return this.pos > 1;
+		return this.pos != 0 && this.pos != 65;
 	}
 	public void draw(Graphics2D g) {
 		g.setColor(Color.WHITE);
@@ -221,7 +256,18 @@ class Pawn {
 	public HashSet<Pawn> checkSlide() {
 		if (this.pos == 6 || this.pos == 21 || this.pos == 36 || this.pos == 51) return this.setPos(this.pos + 4);
 		if (this.pos == 13 || this.pos == 28 || this.pos == 43) return this.setPos(this.pos + 3);
-		if (this.pos == 58) return this.setPos(1);
+		if (this.pos == 58) {
+			HashSet<Pawn> passedPositions = new HashSet<Pawn>(3);
+			Pawn clone = this.clone();
+			clone.setPos(59);
+			passedPositions.add(clone);
+			Pawn clone2 = this.clone();
+			clone2.setPos(100);
+			passedPositions.add(clone2);
+			this.setPos(1);
+			passedPositions.add(this);
+			return passedPositions;
+		}
 		return new HashSet<Pawn>();
 	}
 	public boolean isHome() {
