@@ -50,7 +50,7 @@ class Pawn {
 	public HashSet<Pawn> setPos(int pos) { //sets the position to a new position and recalculates the x and y attributes
 		HashSet<Pawn> moves = new HashSet<Pawn>();
 		Pawn tempClone;
-		for (int intermediatePos = this.pos + 1; intermediatePos < pos + 1; intermediatePos++) { //assembles a set of Pawns at all the intermediate positions passed
+		for (int intermediatePos = this.pos + 1; intermediatePos < pos; intermediatePos++) { //assembles a set of Pawns at all the intermediate positions passed
 			tempClone = this.clone();
 			tempClone.pos = intermediatePos;
 			tempClone.setPos(intermediatePos);
@@ -263,7 +263,7 @@ class Pawn {
 		if (this.pos == 6 || this.pos == 21 || this.pos == 36 || this.pos == 51) return this.setPos(this.pos + 4);
 		if (this.pos == 13 || this.pos == 28 || this.pos == 43) return this.setPos(this.pos + 3);
 		if (this.pos == 58) {
-			HashSet<Pawn> passedPositions = new HashSet<Pawn>(3);
+			HashSet<Pawn> passedPositions = new HashSet<Pawn>(2);
 			Pawn clone = this.clone();
 			clone.setPos(59);
 			passedPositions.add(clone);
@@ -271,7 +271,6 @@ class Pawn {
 			clone.setPos(100);
 			passedPositions.add(clone);
 			this.setPos(1);
-			passedPositions.add(this);
 			return passedPositions;
 		}
 		return new HashSet<Pawn>();
