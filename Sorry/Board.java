@@ -18,12 +18,14 @@ class Board extends JPanel {
 	private int playerTurn;
 	private int turnState;
 	private int remaining;
-	private Pawn switchPawn;
+	private Pawn selectedPawn;
 	private final static int DRAW               = 0;
 	private final static int SELECT_PAWN        = 1;
 	private final static int SELECT_SECOND      = 2;
 	private final static int SELECT_PAWN_SWITCH = 3;
 	private final static int SELECT_PAWN_DEST   = 4;
+	private final static int SELECT_SORRY_INIT  = 5;
+	private final static int SELECT_SORRY_DEST  = 6;
 
 	public final static Color BACKGROUND  = new Color(204, 225, 204);
 	public final static Color RED         = new Color(221, 0, 0);
@@ -72,33 +74,61 @@ class Board extends JPanel {
 								Board.this.oldCards = new Deck(false);
 							}
 							Board.this.oldCards.add(Board.this.newCards.deal());
-							boolean canMove = false;
-							for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
-								if (pawn.canMove(Board.this.oldCards.last()) || (Board.this.oldCards.last().getValue() == 10 && pawn.canTenBackwards())) {
-									canMove = true;
-									break;
+							boolean canMove;
+							if (Board.this.oldCards.last().getValue() == 0) { //Sorry! card
+								boolean anyFriendAtStart = false;
+								for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+									if (pawn.getPos() == 0) {
+										anyFriendAtStart = true;
+										break;
+									}
+								}
+								boolean anyOpponentInPlay = false;
+								for (Color player : Board.COLORS) {
+									if (player.equals(Board.COLORS[Board.this.playerTurn])) continue; //only iterate over other players
+									for (Pawn pawn : Board.this.pawns.get(player)) {
+										if (pawn.getPos() != 0 && (pawn.getPos() < 60 || pawn.getPos() == 100)) {
+											anyOpponentInPlay = true;
+											break;
+										}
+									}
+								}
+								canMove = anyFriendAtStart && anyOpponentInPlay;
+							}
+							else {
+								canMove = false;
+								for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+									if (pawn.canMove(Board.this.oldCards.last()) || (Board.this.oldCards.last().getValue() == 10 && pawn.canTenBackwards())) {
+										canMove = true;
+										break;
+									}
 								}
 							}
 							if (canMove) {
-								if (Board.this.oldCards.last().getValue() == 11) {
-									int choice = JOptionPane.showConfirmDialog(Board.this, "Switch places? (Yes for yes, No for advancing 11 spaces, Cancel to forfeit turn)");
-									switch (choice) {
-										case JOptionPane.YES_OPTION:
-											Board.this.turnState = Board.SELECT_PAWN_SWITCH;
-											Board.this.displayMessage();
-											break;
-										case JOptionPane.NO_OPTION:
-											Board.this.turnState = Board.SELECT_PAWN;
-											Board.this.displayMessage();
-											break;
-										case JOptionPane.CANCEL_OPTION:
-											Board.this.nextTurn();
-											Board.this.displayMessage();
-									}
-								}
-								else {
-									Board.this.turnState = Board.SELECT_PAWN;
-									Board.this.displayMessage();
+								switch (Board.this.oldCards.last().getValue()) {
+									case 0: //Sorry! card
+										Board.this.turnState = Board.SELECT_SORRY_INIT;
+										Board.this.displayMessage();
+										break;
+									case 11:
+										int choice = JOptionPane.showConfirmDialog(Board.this, "Switch places? (Yes for yes, No for advancing 11 spaces, Cancel to forfeit turn)");
+										switch (choice) {
+											case JOptionPane.YES_OPTION:
+												Board.this.turnState = Board.SELECT_PAWN_SWITCH;
+												Board.this.displayMessage();
+												break;
+											case JOptionPane.NO_OPTION:
+												Board.this.turnState = Board.SELECT_PAWN;
+												Board.this.displayMessage();
+												break;
+											case JOptionPane.CANCEL_OPTION:
+												Board.this.nextTurn();
+												Board.this.displayMessage();
+										}
+										break;
+									default:
+										Board.this.turnState = Board.SELECT_PAWN;
+										Board.this.displayMessage();
 								}
 							}
 							else {
@@ -136,7 +166,8 @@ class Board extends JPanel {
 					case Board.SELECT_PAWN:
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
 							if (pawn.clickedBy(e.getX(), e.getY()) && (pawn.canMove(Board.this.oldCards.last()) || (Board.this.oldCards.last().getValue() == 10 && pawn.canTenBackwards()))) {
-								if (Board.this.oldCards.last().getValue() == 7) {
+								if (Board.this.oldCards.last().getValue() == 7) { //7 card
+									pawn.select();
 									int distance = 8;
 									while ((distance < 1 || distance > 7) || (pawn.getPos() != 100 && pawn.getPos() + distance > 65)) {
 										try {
@@ -157,6 +188,7 @@ class Board extends JPanel {
 											}
 										}
 									}
+									pawn.deselect();
 									boolean allHome = true;
 									for (Pawn friendlyPawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
 										if (!friendlyPawn.isHome()) {
@@ -190,9 +222,10 @@ class Board extends JPanel {
 										}
 									}
 								}
-								else if (Board.this.oldCards.last().getValue() == 10) {
+								else if (Board.this.oldCards.last().getValue() == 10) { //10 card
 									if (pawn.canMove(Board.this.oldCards.last())) {
 										if (pawn.canTenBackwards()) {
+											pawn.select();
 											boolean moveForwards = JOptionPane.showConfirmDialog(Board.this, "Go forwards?", "Select an Option", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
 											if (moveForwards) pawn.move(10);
 											else pawn.move(-1);
@@ -212,6 +245,7 @@ class Board extends JPanel {
 											}
 										}
 									}
+									pawn.deselect();
 									boolean allHome = true;
 									for (Pawn friendlyPawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
 										if (!friendlyPawn.isHome()) {
@@ -224,7 +258,7 @@ class Board extends JPanel {
 									Board.this.nextTurn();
 									Board.this.displayMessage();
 								}
-								else {
+								else { //"normal" movement card - not 7 or 10 or Sorry!
 									pawn.move(Board.this.oldCards.last());
 									HashSet<Pawn> moves = pawn.checkSlide();
 									moves.add(pawn);
@@ -288,7 +322,8 @@ class Board extends JPanel {
 					case Board.SELECT_PAWN_SWITCH:
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
 							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.getPos() != 0 && (pawn.getPos() < 60 || pawn.getPos() == 100)) {
-								Board.this.switchPawn = pawn;
+								Board.this.selectedPawn = pawn;
+								pawn.select();
 								Board.this.turnState = Board.SELECT_PAWN_DEST;
 								Board.this.displayMessage();
 								break;
@@ -301,6 +336,7 @@ class Board extends JPanel {
 							if (player.equals(Board.COLORS[Board.this.playerTurn])) {
 								for (Pawn pawn : Board.this.pawns.get(player)) {
 									if (pawn.clickedBy(e.getX(), e.getY())) {
+										Board.this.selectedPawn.deselect();
 										Board.this.turnState = Board.DRAW;
 										Board.this.nextTurn();
 										Board.this.displayMessage();
@@ -312,13 +348,14 @@ class Board extends JPanel {
 							else {
 								for (Pawn pawn : Board.this.pawns.get(player)) {
 									if (pawn.clickedBy(e.getX(), e.getY()) && pawn.getPos() != 0 && (pawn.getPos() < 60 || pawn.getPos() == 100)) {
-										Pawn cloneOfSwitching = Board.this.switchPawn.clone();
+										Pawn cloneOfSwitching = Board.this.selectedPawn.clone();
 										for (int pos = 1; pos < 101; pos++) {
 											if (pos == 60) pos = 100;
 											cloneOfSwitching.setPos(pos);
 											if (cloneOfSwitching.sameSquare(pawn)) {
-												cloneOfSwitching = Board.this.switchPawn.clone(); //keep track of where the pawn used to be so the other one can be switched to it
-												Board.this.switchPawn.setPos(pos);
+												cloneOfSwitching = Board.this.selectedPawn.clone(); //keep track of where the pawn used to be so the other one can be switched to it
+												Board.this.selectedPawn.setPos(pos);
+												Board.this.selectedPawn.deselect();
 												Pawn cloneOfSwitched = pawn.clone();
 												for (int secondPos = 1; secondPos < 60; secondPos++) {
 													if (secondPos == 60) secondPos = 100;
@@ -340,6 +377,44 @@ class Board extends JPanel {
 								}
 							}
 							if (quitLookingLoop) break;
+						}
+						break;
+					case Board.SELECT_SORRY_INIT:
+						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
+							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.getPos() == 0) {
+								Board.this.selectedPawn = pawn;
+								pawn.select();
+								Board.this.turnState = Board.SELECT_SORRY_DEST;
+								Board.this.displayMessage();
+								break;
+							}
+						}
+						break;
+					case Board.SELECT_SORRY_DEST:
+						boolean quitLooking = false;
+						for (Color player : Board.COLORS) {
+							if (player.equals(Board.COLORS[Board.this.playerTurn])) continue;
+							for (Pawn pawn : Board.this.pawns.get(player)) {
+								if (pawn.clickedBy(e.getX(), e.getY()) && pawn.getPos() != 0 && (pawn.getPos() < 60 || pawn.getPos() == 100)) {
+									Pawn cloneOfSwitching = Board.this.selectedPawn.clone();
+									for (int pos = 1; pos < 101; pos++) {
+										if (pos == 60) pos = 100;
+										cloneOfSwitching.setPos(pos);
+										if (cloneOfSwitching.sameSquare(pawn)) {
+											Board.this.selectedPawn.setPos(pos);
+											Board.this.selectedPawn.deselect();
+											pawn.setPos(0);
+											Board.this.turnState = Board.DRAW;
+											Board.this.nextTurn();
+											Board.this.displayMessage();
+											break;
+										}
+									}
+									quitLooking = true;
+									break;
+								}
+							}
+							if (quitLooking) break;
 						}
 				}
 			}
@@ -515,6 +590,10 @@ class Board extends JPanel {
 		}
 		g.setColor(COLORS[this.playerTurn]);
 		g.fillRect(296, 480, 64, 64);
+		g.setFont(comicSansTiny);
+		g.setColor(Color.BLACK);
+		g.drawString("CURRENT", 304, 512);
+		g.drawString("TURN", 312, 528);
 
 		g.setFont(comicSansSmall);
 		g.setColor(Color.BLACK);
@@ -570,6 +649,12 @@ class Board extends JPanel {
 				break;
 			case SELECT_PAWN_DEST:
 				JOptionPane.showMessageDialog(this, "Select pawn to switch with (select one of your own to cancel switching)");
+				break;
+			case SELECT_SORRY_INIT:
+				JOptionPane.showMessageDialog(this, "Select your pawn to leave Start");
+				break;
+			case SELECT_SORRY_DEST:
+				JOptionPane.showMessageDialog(this, "Select pawn to send back to Start");
 		}
 	}
 	private void endGame(Color winnerColor) {

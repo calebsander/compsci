@@ -8,12 +8,14 @@ class Pawn {
 	private int id;
 	private int pos;
 	private int x, y;
+	private boolean selected;
 
 	Pawn(Color color, int id) {
 		this.color = color;
 		this.id = id;
 		this.pos = 0;
 		this.setPos(0);
+		this.selected = false;
 	}
 
 	public void move(Card card) {
@@ -243,6 +245,10 @@ class Pawn {
 		g.drawRect(this.x - 24, this.y - 24, 48, 48);
 		g.setColor(this.color);
 		g.fillRect(this.x - 16, this.y - 16, 32, 32);
+		if (selected) {
+			g.setColor(Color.BLACK);
+			g.fillOval(this.x - 8, this.y - 8, 16, 16);
+		}
 	}
 	public boolean clickedBy(int eX, int eY) {
 		return Math.abs(this.x - eX) < 24 && Math.abs(this.y - eY) < 24;
@@ -280,5 +286,11 @@ class Pawn {
 	}
 	public int getPos() {
 		return this.pos;
+	}
+	public void select() {
+		this.selected = true;
+	}
+	public void deselect() {
+		this.selected = false;
 	}
 }
