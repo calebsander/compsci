@@ -44,32 +44,33 @@ class Deck {
 		return this.cards.get(this.cards.size() - 1);
 	}
 	//Draws the last card
-	public void display(Graphics2D g, int x, int y) {
-		if (this.empty()) {
+	public void display(Graphics2D g, int x, int y, float scaling) {
+		if (this.empty()) { //don't try to display a card if there is none
 			g.setColor(Board.BACKGROUND);
-			g.fillRect(x + 8, y + 8, 272, 176);
+			g.fillRect((int)((x + 8) * scaling), (int)((y + 8) * scaling), (int)(272 * scaling), (int)(176 * scaling));
 		}
 		else {
 			g.setColor(Color.WHITE);
-			g.fillRect(x + 8, y + 8, 272, 176);
+			g.fillRect((int)((x + 8) * scaling), (int)((y + 8) * scaling), (int)(272 * scaling), (int)(176 * scaling));
 			g.setColor(Color.BLACK);
-			g.drawString(this.last().getTitle(), x + 60, y + 60);
+			g.setFont(Board.comicSans);
+			g.drawString(this.last().getTitle(), (int)((x + 60) * scaling), (int)((y + 60) * scaling));
 			g.setFont(Board.comicSansTiny);
 			//Splits the annotation text into lines that are no more than LINE_LENGTH characters and draws them
-			final int LINE_LENGTH = 50;
+			final int LINE_LENGTH = 45;
 			String message = this.last().getMessage();
 			String[] words = message.split(" ");
 			String currentLine = "";
 			int lineNumber = 0;
 			for (String word : words) {
 				if (currentLine.length() + 1 + word.length() > LINE_LENGTH) {
-					g.drawString(currentLine, x + 10, y + 83 + 15 * lineNumber);
+					g.drawString(currentLine, (int)((x + 10) * scaling), (int)((y + 83 + 15 * lineNumber) * scaling));
 					lineNumber++;
 					currentLine = word;
 				}
 				else currentLine += " " + word;
 			}
-			g.drawString(currentLine, x + 10, y + 83 + 15 * lineNumber);
+			g.drawString(currentLine, (int)((x + 10) * scaling), (int)((y + 83 + 15 * lineNumber) * scaling));
 		}
 	}
 }

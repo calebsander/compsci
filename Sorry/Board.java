@@ -41,21 +41,23 @@ class Board extends JPanel {
 	public final static Color DARK_YELLOW = new Color(187, 187, 0);
 	private final static Color[] COLORS   = {RED, BLUE, YELLOW, GREEN};
 	public static Font comicSans, comicSansSmall, comicSansTiny; //stores the best font ever in three different sizes
+	private float scaling;
 
-	Board() {
+	Board(int width) {
+		this.scaling = width / 1024.0F;
 		//Go through a list of all the system fonts to find Comic Sans
 		Font[] systemFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 		boolean foundFont = false;
 		for (Font font : systemFonts) {
 			if (font.getFontName().equals("Comic Sans MS")) {
-				comicSans = font.deriveFont(60.0F);
+				comicSans = font.deriveFont((float)this.scale(60));
 				foundFont = true;
 				break;
 			}
 		}
-		if (!foundFont) comicSans = new Font("SansSerif", Font.PLAIN, 60); //if no Comic Sans could be found, use generic Sans-Serif - this isn't sized exactly the same, but it will suffice
-		comicSansSmall = comicSans.deriveFont(30.0F);
-		comicSansTiny = comicSans.deriveFont(10.0F);
+		if (!foundFont) comicSans = new Font("SansSerif", Font.PLAIN, this.scale(60)); //if no Comic Sans could be found, use generic Sans-Serif - this isn't sized exactly the same, but it will suffice
+		comicSansSmall = comicSans.deriveFont((float)this.scale(30));
+		comicSansTiny  = comicSans.deriveFont((float)this.scale(12));
 
 		//Assemble Map of Team->Set of Pawns
 		this.pawns = new HashMap<Color,HashSet<Pawn>>();
@@ -74,7 +76,7 @@ class Board extends JPanel {
 			public void mouseClicked(MouseEvent e) {
 				switch (Board.this.turnState) { //do different things based on the current part of the turn
 					case Board.DRAW: //if drawing a card
-						if (e.getX() > 368 && e.getX() < 656 && e.getY() > 288 && e.getY() < 480) { //if clicking on the draw pile
+						if (e.getX() > Board.this.scale(368) && e.getX() < Board.this.scale(656) && e.getY() > Board.this.scale(288) && e.getY() < Board.this.scale(480)) { //if clicking on the draw pile
 							if (Board.this.newCards.empty()) Board.this.replenish(); //replenish deck if necessary
 							Board.this.oldCards.add(Board.this.newCards.deal()); //put drawn card in the discard pile
 							boolean canMove; //whether or not a typical move is possible
@@ -193,7 +195,7 @@ class Board extends JPanel {
 						break;
 					case Board.SELECT_PAWN: //if picking a pawn to move
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) { //iterate over all the current player's pawns
-							if (pawn.clickedBy(e.getX(), e.getY()) && (pawn.canMove(Board.this.oldCards.last()) || (Board.this.oldCards.last().getValue() == 10 && pawn.canTenBackwards()))) { //if the pawn was clicked and moving is possible
+							if (pawn.clickedBy(e.getX(), e.getY(), Board.this.scaling) && (pawn.canMove(Board.this.oldCards.last()) || (Board.this.oldCards.last().getValue() == 10 && pawn.canTenBackwards()))) { //if the pawn was clicked and moving is possible
 								if (Board.this.oldCards.last().getValue() == 7) { //7 card
 									pawn.select();
 									int distance = 8;
@@ -320,7 +322,7 @@ class Board extends JPanel {
 						break;
 					case Board.SELECT_SECOND: //if choosing the second pawn to move on a 7 card
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
-							if (pawn.clickedBy(e.getX(), e.getY()) && !pawn.isAtStart() && pawn.getPos() + Board.this.remaining < 66) { //if a pawn on the team was clicking and it was out of Start and it can move the distance
+							if (pawn.clickedBy(e.getX(), e.getY(), Board.this.scaling) && !pawn.isAtStart() && pawn.getPos() + Board.this.remaining < 66) { //if a pawn on the team was clicking and it was out of Start and it can move the distance
 								pawn.move(Board.this.remaining);
 								//See annotations for 7 card in case Board.SELECT_PAWN
 								HashSet<Pawn> moves = pawn.checkSlide();
@@ -352,7 +354,7 @@ class Board extends JPanel {
 						break;
 					case Board.SELECT_PAWN_SWITCH: //if selecting the pawn to switch
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) {
-							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.isSwitchable()) { //if one of the player's pawns is clicking and is switchable
+							if (pawn.clickedBy(e.getX(), e.getY(), Board.this.scaling) && pawn.isSwitchable()) { //if one of the player's pawns is clicking and is switchable
 								Board.this.selectedPawn = pawn; //record that this one should be switched
 								pawn.select();
 								Board.this.turnState = Board.SELECT_PAWN_DEST; //select the receiver of the switch
@@ -366,7 +368,7 @@ class Board extends JPanel {
 						for (Color player : Board.COLORS) {
 							if (player.equals(Board.COLORS[Board.this.playerTurn])) continue; //can't switch with own team
 							for (Pawn pawn : Board.this.pawns.get(player)) {
-								if (pawn.clickedBy(e.getX(), e.getY()) && pawn.isSwitchable()) { //if this pawn is clicked and is switchable
+								if (pawn.clickedBy(e.getX(), e.getY(), Board.this.scaling) && pawn.isSwitchable()) { //if this pawn is clicked and is switchable
 									//The strategy here is to check to see what position on the pawn being switched would put it where the destination pawn is - this is necessary because of how the position of the pawns is kept as relative to their own Start spaces
 									Pawn cloneOfSwitching = Board.this.selectedPawn.clone();
 									for (int pos = 1; pos < 101; pos++) { //iterate over every possible position (0-59 and 100)
@@ -400,7 +402,7 @@ class Board extends JPanel {
 						break;
 					case Board.SELECT_SORRY_INIT: //if selecting the pawn to move out of Start for the Sorry! card
 						for (Pawn pawn : Board.this.pawns.get(Board.COLORS[Board.this.playerTurn])) { //iterate over the pawns on this team
-							if (pawn.clickedBy(e.getX(), e.getY()) && pawn.isAtStart()) { //if the pawn was clicked and is at Start, it is elligible to be switched
+							if (pawn.clickedBy(e.getX(), e.getY(), Board.this.scaling) && pawn.isAtStart()) { //if the pawn was clicked and is at Start, it is elligible to be switched
 								Board.this.selectedPawn = pawn;
 								pawn.select();
 								Board.this.turnState = Board.SELECT_SORRY_DEST; //go to selecting the target pawn
@@ -414,7 +416,7 @@ class Board extends JPanel {
 						for (Color player : Board.COLORS) {
 							if (player.equals(Board.COLORS[Board.this.playerTurn])) continue; //can't switch with own team
 							for (Pawn pawn : Board.this.pawns.get(player)) {
-								if (pawn.clickedBy(e.getX(), e.getY()) && pawn.isSwitchable()) {
+								if (pawn.clickedBy(e.getX(), e.getY(), Board.this.scaling) && pawn.isSwitchable()) {
 									//See annotation for case Board.SELET_PAWN_DEST
 									Pawn cloneOfSwitching = Board.this.selectedPawn.clone();
 									for (int pos = 1; pos < 101; pos++) {
@@ -447,198 +449,198 @@ class Board extends JPanel {
 
 		Graphics2D g = (Graphics2D)gA;
 		g.setFont(comicSans);
-		g.drawString("SORRY!", 400, 536);
+		g.drawString("SORRY!", this.scale(400), this.scale(536));
 		this.setBackground(BACKGROUND);
 
 		//Spaces
 		int i;
 		for (i = 0; i < 16; i++) {
 			g.setColor(Color.WHITE);
-			g.fillRect(i * 64, 0, 64, 64);
-			g.fillRect(i * 64, 960, 64, 64);
+			g.fillRect(this.scale(i * 64),     0,          this.scale(64), this.scale(64));
+			g.fillRect(this.scale(i * 64),     this.scale(960), this.scale(64), this.scale(64));
 			g.setColor(Color.BLACK);
-			g.drawRect(i * 64 - 1, 0, 64, 64);
-			g.drawRect(i * 64 - 1, 960, 64, 64);
+			g.drawRect(this.scale(i * 64) - 1, 0,          this.scale(64), this.scale(64));
+			g.drawRect(this.scale(i * 64) - 1, this.scale(960), this.scale(64), this.scale(64));
 		}
 		for (i = 1; i < 15; i++) {
 			g.setColor(Color.WHITE);
-			g.fillRect(0, i * 64, 64, 64);
-			g.fillRect(960, i * 64, 64, 64);
+			g.fillRect(0,              this.scale(i * 64), this.scale(64), this.scale(64));
+			g.fillRect(this.scale(960),     this.scale(i * 64), this.scale(64), this.scale(64));
 			g.setColor(Color.BLACK);
-			g.drawRect(-1, i * 64, 64, 64);
-			g.drawRect(959, i * 64, 64, 64);
+			g.drawRect(-1,             this.scale(i * 64), this.scale(64), this.scale(64));
+			g.drawRect(this.scale(960) - 1, this.scale(i * 64), this.scale(64), this.scale(64));
 		}
 
 		//Red side without home stretch
-		drawRect(g, DARK_RED, 1, 0, 3, 0);
+		this.drawRect(g, DARK_RED, 1, 0, 3, 0);
 		g.setColor(RED);
-		g.fillPolygon(new int[]{72, 96, 72}, new int[]{8, 32, 56}, 3);
+		g.fillPolygon(new int[]{this.scale(72),  this.scale(96),  this.scale(72)},  new int[]{this.scale(8), this.scale(32), this.scale(56)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{72, 96, 72}, new int[]{8, 32, 56}, 3);
-		drawCircle(g, RED, 4, 0);
-		drawRect(g, DARK_RED, 9, 0, 4, 0);
+		g.drawPolygon(new int[]{this.scale(72),  this.scale(96),  this.scale(72)},  new int[]{this.scale(8), this.scale(32), this.scale(56)}, 3);
+		this.drawCircle(g, RED, 4, 0);
+		this.drawRect(g, DARK_RED, 9, 0, 4, 0);
 		g.setColor(RED);
-		g.fillPolygon(new int[]{584, 608, 584}, new int[]{8, 32, 56}, 3);
+		g.fillPolygon(new int[]{this.scale(584), this.scale(608), this.scale(584)}, new int[]{this.scale(8), this.scale(32), this.scale(56)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{584, 608, 584}, new int[]{8, 32, 56}, 3);
-		drawCircle(g, RED, 13, 0);
+		g.drawPolygon(new int[]{this.scale(584), this.scale(608), this.scale(584)}, new int[]{this.scale(8), this.scale(32), this.scale(56)}, 3);
+		this.drawCircle(g, RED, 13, 0);
 		g.setColor(RED);
-		g.fillOval(191, 64, 192, 192);
+		g.fillOval(this.scale(192) - 1, this.scale(64), this.scale(192), this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(191, 64, 192, 192);
+		g.drawOval(this.scale(192) - 1, this.scale(64), this.scale(192), this.scale(192));
 
 		//Blue side without home stretch
-		drawRect(g, DARK_BLUE, 15, 1, 0, 3);
+		this.drawRect(g, DARK_BLUE, 15, 1, 0, 3);
 		g.setColor(BLUE);
-		g.fillPolygon(new int[]{968, 992, 1016}, new int[]{72, 96, 72}, 3);
+		g.fillPolygon(new int[]{this.scale(968), this.scale(992), this.scale(1016)}, new int[]{this.scale(72),  this.scale(96),  this.scale(72)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{968, 992, 1016}, new int[]{72, 96, 72}, 3);
-		drawCircle(g, BLUE, 15, 4);
-		drawRect(g, DARK_BLUE, 15, 9, 0, 4);
+		g.drawPolygon(new int[]{this.scale(968), this.scale(992), this.scale(1016)}, new int[]{this.scale(72),  this.scale(96),  this.scale(72)}, 3);
+		this.drawCircle(g, BLUE, 15, 4);
+		this.drawRect(g, DARK_BLUE, 15, 9, 0, 4);
 		g.setColor(BLUE);
-		g.fillPolygon(new int[]{968, 992, 1016}, new int[]{584, 608, 584}, 3);
+		g.fillPolygon(new int[]{this.scale(968), this.scale(992), this.scale(1016)}, new int[]{this.scale(584), this.scale(608), this.scale(584)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{968, 992, 1016}, new int[]{584, 608, 584}, 3);
-		drawCircle(g, BLUE, 15, 13);
+		g.drawPolygon(new int[]{this.scale(968), this.scale(992), this.scale(1016)}, new int[]{this.scale(584), this.scale(608), this.scale(584)}, 3);
+		this.drawCircle(g, BLUE, 15, 13);
 		g.setColor(BLUE);
-		g.fillOval(767, 192, 192, 192);
+		g.fillOval(this.scale(768) - 1, this.scale(192), this.scale(192), this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(767, 192, 192, 192);
+		g.drawOval(this.scale(768) - 1, this.scale(192), this.scale(192), this.scale(192));
 
 		//Yellow side without home stretch
-		drawRect(g, DARK_YELLOW, 2, 15, 4, 0);
+		this.drawRect(g, DARK_YELLOW, 2, 15, 4, 0);
 		g.setColor(YELLOW);
-		g.fillPolygon(new int[]{440, 416, 440}, new int[]{968, 992, 1016}, 3);
+		g.fillPolygon(new int[]{this.scale(440), this.scale(416), this.scale(440)}, new int[]{this.scale(968), this.scale(992), this.scale(1016)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{440, 416, 440}, new int[]{968, 992, 1016}, 3);
-		drawCircle(g, YELLOW, 2, 15);
-		drawRect(g, DARK_YELLOW, 11, 15, 3, 0);
+		g.drawPolygon(new int[]{this.scale(440), this.scale(416), this.scale(440)}, new int[]{this.scale(968), this.scale(992), this.scale(1016)}, 3);
+		this.drawCircle(g, YELLOW, 2, 15);
+		this.drawRect(g, DARK_YELLOW, 11, 15, 3, 0);
 		g.setColor(YELLOW);
-		g.fillPolygon(new int[]{952, 928, 952}, new int[]{968, 992, 1016}, 3);
+		g.fillPolygon(new int[]{this.scale(952), this.scale(928), this.scale(952)}, new int[]{this.scale(968), this.scale(992), this.scale(1016)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{952, 928, 952}, new int[]{968, 992, 1016}, 3);
-		drawCircle(g, YELLOW, 11, 15);
+		g.drawPolygon(new int[]{this.scale(952), this.scale(928), this.scale(952)}, new int[]{this.scale(968), this.scale(992), this.scale(1016)}, 3);
+		this.drawCircle(g, YELLOW, 11, 15);
 		g.setColor(YELLOW);
-		g.fillOval(639, 768, 192, 192);
+		g.fillOval(this.scale(640) - 1, this.scale(768), this.scale(192), this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(639, 768, 192, 192);
+		g.drawOval(this.scale(640) - 1, this.scale(768), this.scale(192), this.scale(192));
 
 		//Green side without home stretch
-		drawRect(g, DARK_GREEN, 0, 2, 0, 4);
+		this.drawRect(g, DARK_GREEN, 0, 2, 0, 4);
 		g.setColor(GREEN);
-		g.fillPolygon(new int[]{8, 32, 56}, new int[]{440, 416, 440}, 3);
+		g.fillPolygon(new int[]{this.scale(8), this.scale(32), this.scale(56)}, new int[]{this.scale(440), this.scale(416), this.scale(440)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{8, 32, 56}, new int[]{440, 416, 440}, 3);
-		drawCircle(g, GREEN, 0, 2);
-		drawRect(g, DARK_GREEN, 0, 11, 0, 3);
+		g.drawPolygon(new int[]{this.scale(8), this.scale(32), this.scale(56)}, new int[]{this.scale(440), this.scale(416), this.scale(440)}, 3);
+		this.drawCircle(g, GREEN, 0, 2);
+		this.drawRect(g, DARK_GREEN, 0, 11, 0, 3);
 		g.setColor(GREEN);
-		g.fillPolygon(new int[]{8, 32, 56}, new int[]{952, 928, 952}, 3);
+		g.fillPolygon(new int[]{this.scale(8), this.scale(32), this.scale(56)}, new int[]{this.scale(952), this.scale(928), this.scale(952)}, 3);
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{8, 32, 56}, new int[]{952, 928, 952}, 3);
-		drawCircle(g, GREEN, 0, 11);
+		g.drawPolygon(new int[]{this.scale(8), this.scale(32), this.scale(56)}, new int[]{this.scale(952), this.scale(928), this.scale(952)}, 3);
+		this.drawCircle(g, GREEN, 0, 11);
 		g.setColor(GREEN);
-		g.fillOval(63, 640, 192, 192);
+		g.fillOval(this.scale(64) - 1, this.scale(640), this.scale(192), this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(63, 640, 192, 192);
+		g.drawOval(this.scale(64) - 1, this.scale(640), this.scale(192), this.scale(192));
 
 		//Red home stretch
 		g.setColor(RED);
-		g.fillRect(127, 64, 64, 384);
+		g.fillRect(this.scale(128) - 1, this.scale(64),  this.scale(64),     this.scale(384));
 		g.setColor(Color.BLACK);
-		g.drawRect(127, 64, 64, 64);
-		g.drawRect(127, 128, 64, 64);
-		g.drawRect(127, 192, 64, 64);
-		g.drawRect(127, 256, 64, 64);
-		g.drawRect(127, 320, 64, 64);
-		g.fillRect(127, 384, 65, 64);
+		g.drawRect(this.scale(128) - 1, this.scale(64),  this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(128) - 1, this.scale(128), this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(128) - 1, this.scale(192), this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(128) - 1, this.scale(256), this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(128) - 1, this.scale(320), this.scale(64),     this.scale(64));
+		g.fillRect(this.scale(128) - 1, this.scale(384), this.scale(64) + 1, this.scale(64));
 		g.setColor(RED);
-		g.fillOval(64, 384, 192, 192);
+		g.fillOval(this.scale(64),      this.scale(384), this.scale(192),    this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(64, 384, 192, 192);
+		g.drawOval(this.scale(64),      this.scale(384), this.scale(192),    this.scale(192));
 
 		//Blue home stretch
 		g.setColor(BLUE);
-		g.fillRect(576, 128, 383, 64);
+		g.fillRect(this.scale(576), this.scale(128), this.scale(384) - 1, this.scale(64));
 		g.setColor(Color.BLACK);
-		g.drawRect(896, 128, 63, 64);
-		g.drawRect(832, 128, 64, 64);
-		g.drawRect(768, 128, 64, 64);
-		g.drawRect(704, 128, 64, 64);
-		g.drawRect(640, 128, 64, 64);
-		g.fillRect(576, 128, 64, 65);
+		g.drawRect(this.scale(896), this.scale(128), this.scale(64)  - 1, this.scale(64));
+		g.drawRect(this.scale(832), this.scale(128), this.scale(64),      this.scale(64));
+		g.drawRect(this.scale(768), this.scale(128), this.scale(64),      this.scale(64));
+		g.drawRect(this.scale(704), this.scale(128), this.scale(64),      this.scale(64));
+		g.drawRect(this.scale(640), this.scale(128), this.scale(64),      this.scale(64));
+		g.fillRect(this.scale(576), this.scale(128), this.scale(64),      this.scale(64) + 1);
 		g.setColor(BLUE);
-		g.fillOval(448, 64, 192, 192);
+		g.fillOval(this.scale(448), this.scale(64),  this.scale(192),     this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(448, 64, 192, 192);
+		g.drawOval(this.scale(448), this.scale(64),  this.scale(192),     this.scale(192));
 
 		//Yellow home stretch
 		g.setColor(YELLOW);
-		g.fillRect(831, 576, 64, 384);
+		g.fillRect(this.scale(832) - 1, this.scale(576), this.scale(64),     this.scale(384));
 		g.setColor(Color.BLACK);
-		g.drawRect(831, 896, 64, 64);
-		g.drawRect(831, 832, 64, 64);
-		g.drawRect(831, 768, 64, 64);
-		g.drawRect(831, 704, 64, 64);
-		g.drawRect(831, 640, 64, 64);
-		g.fillRect(831, 576, 65, 64);
+		g.drawRect(this.scale(832) - 1, this.scale(896), this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(832) - 1, this.scale(832), this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(832) - 1, this.scale(768), this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(832) - 1, this.scale(704), this.scale(64),     this.scale(64));
+		g.drawRect(this.scale(832) - 1, this.scale(640), this.scale(64),     this.scale(64));
+		g.fillRect(this.scale(832) - 1, this.scale(576), this.scale(64) + 1, this.scale(64));
 		g.setColor(YELLOW);
-		g.fillOval(767, 448, 192, 192);
+		g.fillOval(this.scale(768) - 1, this.scale(448), this.scale(192),    this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(767, 448, 192, 192);
+		g.drawOval(this.scale(768) - 1, this.scale(448), this.scale(192),    this.scale(192));
 
 		//Green home stretch
 		g.setColor(GREEN);
-		g.fillRect(63, 832, 384, 64);
+		g.fillRect(this.scale(64) - 1,   this.scale(832), this.scale(384), this.scale(64));
 		g.setColor(Color.BLACK);
-		g.drawRect(63, 832, 64, 64);
-		g.drawRect(127, 832, 64, 64);
-		g.drawRect(191, 832, 64, 64);
-		g.drawRect(255, 832, 64, 64);
-		g.drawRect(319, 832, 64, 64);
-		g.fillRect(383, 832, 64, 65);
+		g.drawRect(this.scale(64) - 1,   this.scale(832), this.scale(64),  this.scale(64));
+		g.drawRect(this.scale(128) - 1,  this.scale(832), this.scale(64),  this.scale(64));
+		g.drawRect(this.scale(192) - 1,  this.scale(832), this.scale(64),  this.scale(64));
+		g.drawRect(this.scale(256) - 1,  this.scale(832), this.scale(64),  this.scale(64));
+		g.drawRect(this.scale(320) - 1,  this.scale(832), this.scale(64),  this.scale(64));
+		g.fillRect(this.scale(384) - 1,  this.scale(832), this.scale(64),  this.scale(64) + 1);
 		g.setColor(GREEN);
-		g.fillOval(383, 768, 192, 192);
+		g.fillOval(this.scale(384) - 1,  this.scale(768), this.scale(192), this.scale(192));
 		g.setColor(Color.BLACK);
-		g.drawOval(383, 768, 192, 192);
+		g.drawOval(this.scale(384) - 1,  this.scale(768), this.scale(192), this.scale(192));
 
 		//Centerpiece
 		g.setColor(Color.BLACK);
-		g.drawPolygon(new int[]{256, 512, 768, 512}, new int[]{512, 256, 512, 768}, 4);
-		drawCardBase(g, 368, 288);
-		drawCardBase(g, 368, 544);
+		g.drawPolygon(new int[]{this.scale(256), this.scale(512), this.scale(768), this.scale(512)}, new int[]{this.scale(512), this.scale(256), this.scale(512), this.scale(768)}, 4);
+		drawCardBase(g, this.scale(368), this.scale(288));
+		drawCardBase(g, this.scale(368), this.scale(544));
 		g.setColor(Color.WHITE);
-		g.fillRect(376, 296, 272, 176);
+		g.fillRect(this.scale(376), this.scale(296), this.scale(272), this.scale(176));
 		g.setColor(GREEN);
-		g.fillRect(384, 304, 256, 160);
+		g.fillRect(this.scale(384), this.scale(304), this.scale(256), this.scale(160));
 		g.setColor(DARK_GREEN);
-		g.fillRect(448, 320, 128, 128);
-		this.oldCards.display(g, 368, 544); //draw the top of the discard pile
+		g.fillRect(this.scale(448), this.scale(320), this.scale(128), this.scale(128));
+		this.oldCards.display(g, 368, 544, scaling); //draw the top of the discard pile
 		g.setColor(Color.BLACK);
 
 		//Draw each pawn
 		for (Color player : COLORS) {
-			for (Pawn pawn : this.pawns.get(player)) pawn.draw(g);
+			for (Pawn pawn : this.pawns.get(player)) pawn.draw(g, scaling);
 		}
 
 		//Draw color of current turn
 		g.setColor(COLORS[this.playerTurn]);
-		g.fillRect(296, 480, 64, 64);
+		g.fillRect(this.scale(296), this.scale(480), this.scale(64), this.scale(64));
 		g.setFont(comicSansTiny);
 		g.setColor(Color.BLACK);
-		g.drawString("CURRENT", 304, 512);
-		g.drawString("TURN", 312, 528);
+		g.drawString("CURRENT", this.scale(304), this.scale(512));
+		g.drawString("TURN",    this.scale(312), this.scale(528));
 
 		//Draw Start and Home labels
 		g.setFont(comicSansSmall);
 		g.setColor(Color.BLACK);
-		g.drawString("START", 224, 288);
-		g.drawString("HOME", 96, 608);
-		g.drawString("START", 800, 416);
-		g.drawString("HOME", 616, 96);
-		g.drawString("START", 672, 760);
-		g.drawString("HOME", 800, 448);
-		g.drawString("START", 96, 640);
-		g.drawString("HOME", 300, 824);
+		g.drawString("START", this.scale(224), this.scale(288));
+		g.drawString("HOME",  this.scale(96),  this.scale(608));
+		g.drawString("START", this.scale(800), this.scale(416));
+		g.drawString("HOME",  this.scale(616), this.scale(96));
+		g.drawString("START", this.scale(672), this.scale(760));
+		g.drawString("HOME",  this.scale(800), this.scale(448));
+		g.drawString("START", this.scale(96),  this.scale(640));
+		g.drawString("HOME",  this.scale(300), this.scale(824));
 
 		//Draw the board every 50 milliseconds - it is useful to update the background while a dialog message is in process, which would block it everywhere else
 		try {
@@ -647,6 +649,10 @@ class Board extends JPanel {
 		catch (InterruptedException e) {}
 		this.repaint();
 	}
+	//Scales a coordinate by the stored scaling value
+	public int scale(int value) {
+		return (int)(value * this.scaling);
+	}
 	//Makes a new draw deck and discard deck
 	private void replenish() {
 		this.newCards = new Deck(true);
@@ -654,25 +660,25 @@ class Board extends JPanel {
 		this.oldCards = new Deck(false);
 	}
 	//Draws the outline of a slide rectangle
-	private static void drawRect(Graphics2D g, Color color, int x, int y, int width, int height) {
+	private void drawRect(Graphics2D g, Color color, int x, int y, int width, int height) {
 		g.setColor(color);
-		g.fillRect(x * 64 + 16, y * 64 + 16, width * 64 + 32, height * 64 + 32);
+		g.fillRect(this.scale(x * 64 + 16), this.scale(y * 64 + 16), this.scale(width * 64 + 32), this.scale(height * 64 + 32));
 		g.setColor(Color.BLACK);
-		g.drawRect(x * 64 + 16, y * 64 + 16, width * 64 + 32, height * 64 + 32);
+		g.drawRect(this.scale(x * 64 + 16), this.scale(y * 64 + 16), this.scale(width * 64 + 32), this.scale(height * 64 + 32));
 	}
 	//Draws the circle at the end of a slide rectangle
-	private static void drawCircle(Graphics2D g, Color color, int x, int y) {
+	private void drawCircle(Graphics2D g, Color color, int x, int y) {
 		g.setColor(color);
-		g.fillOval(x * 64 + 8, y * 64 + 8, 48, 48);
+		g.fillOval(this.scale(x * 64 + 8), this.scale(y * 64 + 8), this.scale(48), this.scale(48));
 		g.setColor(Color.BLACK);
-		g.drawOval(x * 64 + 8, y * 64 + 8, 48, 48);
+		g.drawOval(this.scale(x * 64 + 8), this.scale(y * 64 + 8), this.scale(48), this.scale(48));
 	}
 	//Draws the black outline around a deck base
-	private static void drawCardBase(Graphics2D g, int x, int y) {
+	private void drawCardBase(Graphics2D g, int x, int y) {
 		g.setColor(Color.BLACK);
-		g.drawRect(x, y, 288, 192);
+		g.drawRect(x, y, this.scale(288), this.scale(192));
 		g.setColor(BACKGROUND);
-		g.fillRect(x + 1, y + 1, 287, 191);
+		g.fillRect(x + 1, y + 1, this.scale(288) - 1, this.scale(192) - 1);
 	}
 	//Goes to the next turn
 	private void nextTurn() {
@@ -705,10 +711,10 @@ class Board extends JPanel {
 	}
 	//Alert which player won and end the program
 	private void endGame(Color winnerColor) {
-		if (winnerColor.equals(RED)) JOptionPane.showMessageDialog(this, "Red wins!");
-		else if (winnerColor.equals(BLUE)) JOptionPane.showMessageDialog(this, "Blue wins!");
+		if      (winnerColor.equals(RED))    JOptionPane.showMessageDialog(this, "Red wins!");
+		else if (winnerColor.equals(BLUE))   JOptionPane.showMessageDialog(this, "Blue wins!");
 		else if (winnerColor.equals(YELLOW)) JOptionPane.showMessageDialog(this, "Yellow wins!");
-		else if (winnerColor.equals(GREEN)) JOptionPane.showMessageDialog(this, "Green wins!");
+		else if (winnerColor.equals(GREEN))  JOptionPane.showMessageDialog(this, "Green wins!");
 		System.exit(0);
 	}
 }

@@ -238,20 +238,20 @@ class Pawn {
 	public boolean canTenBackwards() { //whether the pawn can go back one square
 		return !this.isAtStart() && !this.isHome();
 	}
-	public void draw(Graphics2D g) { //draws the pawn onto a Graphics object relative to its x and y attributes
+	public void draw(Graphics2D g, float scaling) { //draws the pawn onto a Graphics object relative to its x and y attributes
 		g.setColor(Color.WHITE);
-		g.fillRect(this.x - 24, this.y - 24, 48, 48);
+		g.fillRect((int)((this.x - 24) * scaling), (int)((this.y - 24) * scaling), (int)(48 * scaling), (int)(48 * scaling));
 		g.setColor(Color.BLACK);
-		g.drawRect(this.x - 24, this.y - 24, 48, 48);
+		g.drawRect((int)((this.x - 24) * scaling), (int)((this.y - 24) * scaling), (int)(48 * scaling), (int)(48 * scaling));
 		g.setColor(this.color);
-		g.fillRect(this.x - 16, this.y - 16, 32, 32);
+		g.fillRect((int)((this.x - 16) * scaling), (int)((this.y - 16) * scaling), (int)(32 * scaling), (int)(32 * scaling));
 		if (selected) { //draw a black circle in the middle if it is selected
 			g.setColor(Color.BLACK);
-			g.fillOval(this.x - 8, this.y - 8, 16, 16);
+			g.fillOval((int)((this.x - 8) * scaling), (int)((this.y - 8) * scaling), (int)(16 * scaling), (int)(16 * scaling));
 		}
 	}
-	public boolean clickedBy(int eX, int eY) { //whether or not a pawn was clicked if the click was at the specified coordinates
-		return Math.abs(this.x - eX) < 24 && Math.abs(this.y - eY) < 24;
+	public boolean clickedBy(int eX, int eY, float scaling) { //whether or not a pawn was clicked if the click was at the specified coordinates
+		return Math.abs((int)(this.x * scaling) - eX) < (int)(24 * scaling) && Math.abs((int)(this.y * scaling) - eY) < (int)(24 * scaling);
 	}
 	public boolean equals(Pawn otherPawn) { //used to tell two pawns apart
 		return this.color.equals(otherPawn.color) && this.id == otherPawn.id;
