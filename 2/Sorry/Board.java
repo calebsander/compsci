@@ -456,18 +456,18 @@ class Board extends JPanel {
 		int i;
 		for (i = 0; i < 16; i++) {
 			g.setColor(Color.WHITE);
-			g.fillRect(this.scale(i * 64),     0,          this.scale(64), this.scale(64));
+			g.fillRect(this.scale(i * 64),     0,               this.scale(64), this.scale(64));
 			g.fillRect(this.scale(i * 64),     this.scale(960), this.scale(64), this.scale(64));
 			g.setColor(Color.BLACK);
-			g.drawRect(this.scale(i * 64) - 1, 0,          this.scale(64), this.scale(64));
+			g.drawRect(this.scale(i * 64) - 1, 0,               this.scale(64), this.scale(64));
 			g.drawRect(this.scale(i * 64) - 1, this.scale(960), this.scale(64), this.scale(64));
 		}
 		for (i = 1; i < 15; i++) {
 			g.setColor(Color.WHITE);
-			g.fillRect(0,              this.scale(i * 64), this.scale(64), this.scale(64));
+			g.fillRect(0,                   this.scale(i * 64), this.scale(64), this.scale(64));
 			g.fillRect(this.scale(960),     this.scale(i * 64), this.scale(64), this.scale(64));
 			g.setColor(Color.BLACK);
-			g.drawRect(-1,             this.scale(i * 64), this.scale(64), this.scale(64));
+			g.drawRect(-1,                  this.scale(i * 64), this.scale(64), this.scale(64));
 			g.drawRect(this.scale(960) - 1, this.scale(i * 64), this.scale(64), this.scale(64));
 		}
 
