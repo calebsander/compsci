@@ -1,13 +1,10 @@
 #include <stdio.h>
 
-/*ungetchar(char c) {
-	unget(c, stdin) // Unread char read from stdin
-}*/
-typedef char boolean;
+typedef char boolean; //thanks, C
 #define FALSE 0
 #define TRUE  1
 
-//What we are currently inside of
+//Variables to keep track of what we are currently inside of
 boolean blockComment = FALSE;
 boolean lineComment = FALSE;
 boolean string = FALSE;
@@ -16,43 +13,40 @@ boolean character = FALSE;
 char nextChar;
 void process(char inputChar) {
 	switch (inputChar) {
-		case '<':
+		case '<': //must be escaped in HTML
 			printf("&lt;");
 			break;
-		case '>':
+		case '>': //see '<'
 			printf("&gt;");
 			break;
-		case '&':
+		case '&': //see '<'
 			printf("&amp;");
 			break;
 		case '\\':
 			putchar(inputChar);
 			putchar(getchar()); //skip checking the next character because it is escaped
 			break;
-		case '"': //start or end of string
-			if (character) putchar(inputChar);
+		case '"': //start or end of string (if not nested in a character)
+			if (character) putchar(inputChar); //if in '"', then just print it normally
 			else {
-				string = !string;
+				string = !string; //we have either started or stopped a string
 				if (string) {
 					printf("<b>");
 					putchar(inputChar);
 				}
 				else {
-					putchar(inputChar);
+					putchar(inputChar); //make sure quotation mark goes inside the <b> tags
 					printf("</b>");
 				}
 			}
 			break;
-		case '\'':
-			if (string) putchar(inputChar);
-			else {
-				putchar(inputChar);
-				character = !character;
-			}
+		case '\'': //start or end of character (if not nested in a string)
+			putchar(inputChar);
+			if (!string) character = !character; //only start/stop a character literal if not inside a string
 			break;
-		case '/':
-			nextChar = getchar();
-			if (nextChar == '/') {
+		case '/': //potentially the start of a comment
+			nextChar = getchar(); //we need a second character in order to be able to decide
+			if (nextChar == '/') { //potential start of line comment
 				if (!lineComment) { //can't do another line comment on the same line
 					printf("<i>");
 					lineComment = TRUE;
@@ -67,11 +61,11 @@ void process(char inputChar) {
 				blockComment = TRUE;
 			}
 			else {
-				putchar(inputChar);
-				process(nextChar);
+				putchar(inputChar); //print the slash normally
+				process(nextChar); //the next character could conceivably also matter for the formatting
 			}
 			break;
-		case '*':
+		case '*': //potentially the end of a block comment
 			nextChar = getchar();
 			if (nextChar == '/' && blockComment) { //blockComment should never be false when this happens, but try to handle bad entry gracefully (no unmatched </i>)
 				putchar(inputChar);
@@ -81,24 +75,24 @@ void process(char inputChar) {
 			}
 			else {
 				putchar(inputChar);
-				process(nextChar);
+				process(nextChar); //see else block in case '/'
 			}
 			break;
-		case '\n': //check for end of line comment
+		case '\n': //would be the end of line comment
 			if (lineComment) {
 				printf("</i>");
 				lineComment = FALSE;
 			}
 			putchar(inputChar);
 			break;
-		default:
+		default: //normal characters should just be printed
 			putchar(inputChar);
 	}
 }
 
 main() {
-	printf("<pre>\n");
+	printf("<pre>\n"); //wrap the code in <pre> tags
 	char inputChar;
-	while ((inputChar = getchar()) != EOF) process(inputChar);
-	printf("\n</pre>\n");
+	while ((inputChar = getchar()) != EOF) process(inputChar); //iterate through stream until finding an EOF character
+	printf("</pre>\n");
 }
