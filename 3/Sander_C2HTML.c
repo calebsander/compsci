@@ -1,18 +1,14 @@
+#include <stdbool.h>
 #include <stdio.h>
 
-typedef char boolean; //thanks, C
-#define FALSE 0
-#define TRUE  1
+bool gInBlockComment = false; //whether a block comment has started but not yet finished at the current posititon in the input
+bool gInLineComment = false; //whether a line comment has started but not yet finished
+bool gInString = false; //whether a string literal has started but not yet finished
+bool gInCharacter = false; //whether a character literal has started but not yet finished
 
-//Variables to keep track of what we are currently inside of
-boolean blockComment = FALSE;
-boolean lineComment = FALSE;
-boolean string = FALSE;
-boolean character = FALSE;
-
-char nextChar;
 void process(char inputChar) {
-	switch (inputChar) {
+	char nextChar;
+	switch (inputChar) { //go through the different cases that need special attention
 		case '<': //must be escaped in HTML
 			printf("&lt;");
 			break;
@@ -27,10 +23,10 @@ void process(char inputChar) {
 			putchar(getchar()); //skip checking the next character because it is escaped
 			break;
 		case '"': //start or end of string (if not nested in a character)
-			if (character) putchar(inputChar); //if in '"', then just print it normally
+			if (gInCharacter) putchar(inputChar); //if in '"', then just print it normally
 			else {
-				string = !string; //we have either started or stopped a string
-				if (string) {
+				gInString = !gInString; //we have either started or stopped a string
+				if (gInString) {
 					printf("<b>");
 					putchar(inputChar);
 				}
@@ -42,23 +38,23 @@ void process(char inputChar) {
 			break;
 		case '\'': //start or end of character (if not nested in a string)
 			putchar(inputChar);
-			if (!string) character = !character; //only start/stop a character literal if not inside a string
+			if (!gInString) gInCharacter = !gInCharacter; //only start/stop a character literal if not inside a string
 			break;
 		case '/': //potentially the start of a comment
 			nextChar = getchar(); //we need a second character in order to be able to decide
 			if (nextChar == '/') { //potential start of line comment
-				if (!lineComment) { //can't do another line comment on the same line
+				if (!gInLineComment) { //can't do another line comment on the same line
 					printf("<i>");
-					lineComment = TRUE;
+					gInLineComment = true;
 				}
 				putchar(inputChar);
 				putchar(nextChar);
 			}
-			else if (nextChar == '*' && !blockComment) { //if we are already in a block comment, make sure to check to see whether the '*' is part of the end signature (process again)
+			else if (nextChar == '*' && !gInBlockComment) { //if we are already in a block comment, make sure to check to see whether the '*' is part of the end signature (process again)
 				printf("<i>");
 				putchar(inputChar);
 				putchar(nextChar);
-				blockComment = TRUE;
+				gInBlockComment = true;
 			}
 			else {
 				putchar(inputChar); //print the slash normally
@@ -67,11 +63,11 @@ void process(char inputChar) {
 			break;
 		case '*': //potentially the end of a block comment
 			nextChar = getchar();
-			if (nextChar == '/' && blockComment) { //blockComment should never be false when this happens, but try to handle bad entry gracefully (no unmatched </i>)
+			if (nextChar == '/' && gInBlockComment) { //gInBlockComment should never be false when this happens, but try to handle bad entry gracefully (no unmatched </i>)
 				putchar(inputChar);
 				putchar(nextChar);
 				printf("</i>");
-				blockComment = FALSE;
+				gInBlockComment = false;
 			}
 			else {
 				putchar(inputChar);
@@ -79,9 +75,9 @@ void process(char inputChar) {
 			}
 			break;
 		case '\n': //would be the end of line comment
-			if (lineComment) {
+			if (gInLineComment) {
 				printf("</i>");
-				lineComment = FALSE;
+				gInLineComment = false;
 			}
 			putchar(inputChar);
 			break;
@@ -90,7 +86,7 @@ void process(char inputChar) {
 	}
 }
 
-main() {
+int main() {
 	printf("<pre>\n"); //wrap the code in <pre> tags
 	char inputChar;
 	while ((inputChar = getchar()) != EOF) process(inputChar); //iterate through stream until finding an EOF character
