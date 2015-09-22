@@ -39,7 +39,7 @@ void process(char inputChar) {
 			putchar(getchar());
 			break;
 		case '"': //start or end of string (if not nested in comment or character)
-			//If in '"', then just print it normally
+			//If nested, then just print it normally
 			if (gInCharacter || gInBlockComment || gInLineComment) putchar(inputChar);
 			else {
 				gInString = !gInString; //we have either started or stopped a string
@@ -59,7 +59,7 @@ void process(char inputChar) {
 			if (!(gInString || gInBlockComment || gInLineComment))
 				gInCharacter = !gInCharacter;
 			break;
-		case '/': //potentially the start of a comment
+		case '/': //potentially the start of a comment (if not nested)
 			//We need a second character in order to be able to decide if it is a comment
 			nextChar = getchar();
 			if (nextChar == '/') { //potential start of line comment
@@ -71,18 +71,18 @@ void process(char inputChar) {
 				putchar(inputChar);
 				putchar(nextChar);
 			}
-			else if (nextChar == '*' &&
-			//Can't be nested
-			!(gInBlockComment || gInLineComment || gInCharacter || gInString)) {
-				printf("<i>");
+			else if (nextChar == '*') { //same logic as line comment case
+				if (!(gInBlockComment || gInLineComment || gInCharacter || gInString)) {
+					printf("<i>");
+					gInBlockComment = true;
+				}
 				putchar(inputChar);
 				putchar(nextChar);
-				gInBlockComment = true;
 			}
-			else {
+			else { //just a normal slash character
 				putchar(inputChar); //print the slash normally
-				/*if the next character wasn't special or we are already in a block comment,
-					make sure to check to see whether the '*' needs special processing*/
+				/*if the next character wasn't special,
+					make sure to check to see whether the character needs special processing*/
 				process(nextChar);
 			}
 			break;
