@@ -114,9 +114,9 @@ void process(char inputChar) {
 }
 
 int main() {
-	printf("<pre>\n"); //wrap the code in <pre> tags
+	printf("<pre>"); //wrap the code in <pre> tags
 	//Iterate through input stream until finding an EOF character
 	char inputChar;
 	while ((inputChar = getchar()) != EOF) process(inputChar);
-	printf("</pre><!--By the way, the 80 character line limit is annoying.-->\n");
+	printf("</pre>\n");
 }
