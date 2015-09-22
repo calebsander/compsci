@@ -34,9 +34,10 @@ void process(char inputChar) {
 			printf("&amp;");
 			break;
 		case '\\':
-			//Skip checking the next character because it is escaped
 			putchar(inputChar);
-			putchar(getchar());
+			/*Skip checking the next character because it is escaped
+				(Unless in block comment - sequence \ * /)*/
+			if (!gInBlockComment) putchar(getchar());
 			break;
 		case '"': //start or end of string (if not nested in comment or character)
 			//If nested, then just print it normally
