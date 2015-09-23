@@ -36,8 +36,8 @@ void process(char inputChar) {
 		case '\\':
 			putchar(inputChar);
 			/*Skip checking the next character because it is escaped
-				(Unless in block comment - sequence \ * /)*/
-			if (!gInBlockComment) putchar(getchar());
+				(Unless in comment - sequence \ * / or \ EOF)*/
+			if (!(gInBlockComment || gInLineComment)) putchar(getchar());
 			break;
 		case '"': //start or end of string (if not nested in comment or character)
 			//If nested, then just print it normally
@@ -119,5 +119,7 @@ int main() {
 	//Iterate through input stream until finding an EOF character
 	char inputChar;
 	while ((inputChar = getchar()) != EOF) process(inputChar);
+	//Check for line comment terminated by EOF
+	if (gInLineComment) printf("</i>");
 	printf("</pre>\n");
 }
