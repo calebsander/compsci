@@ -102,6 +102,16 @@ void process(char inputChar) {
 				process(nextChar); //see else block in case '/'
 			}
 			break;
+		case '\r': //see whether line ending is \r or \r\n
+			nextChar = getchar();
+			//CRLF treated as LF
+			if (nextChar == '\n') process(nextChar); //ignore the \r character
+			//CR treated as LF
+			else {
+				process('\n');
+				process(nextChar); //extra character still needs processing
+			}
+			break;
 		case '\n': //would be the end of line comment
 			if (gInLineComment) {
 				printf("</i>");
