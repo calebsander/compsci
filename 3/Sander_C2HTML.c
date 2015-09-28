@@ -129,7 +129,6 @@ int main() {
 	//Iterate through input stream until finding an EOF character
 	char inputChar;
 	while ((inputChar = getchar()) != EOF) process(inputChar);
-	//Check for line comment terminated by EOF
-	if (gInLineComment) printf("</i>");
+	if (gInLineComment) printf("</i>"); //check for line comment terminated by EOF
 	printf("</pre>\n");
 }
