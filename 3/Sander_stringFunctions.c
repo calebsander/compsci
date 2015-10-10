@@ -1,3 +1,9 @@
+/*
+	Caleb Sander
+	10/06/2015
+	stringFunctions.c
+*/
+
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -52,6 +58,7 @@ int main() {
 	printf("Unequal\t%d\n", stringEquals("abc", "abcd", false));
 	printf("Unequal\t%d\n", stringEquals("abc", "", false));
 	printf("Unequal\t%d\n", stringEquals("abcd", "efg", false));
+	printf("Unequal\t%d\n", stringEquals("", "test", true));
 	printf("stringSpan:\n");
 	printf("0\t%d\n", stringSpan("cat", "abcdef"));
 	printf("2\t%d\n", stringSpan("friend", "eioua"));
