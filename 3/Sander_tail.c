@@ -5,13 +5,13 @@
 int getDigit(char c) {
 	if ('0' <= c && c <= '9') return c - '0';
 	else {
-		puts("Invalid numerical value\n");
+		fputs("Invalid numerical value\n", stderr);
 		exit(EXIT_FAILURE);
 	}
 }
 
 bool gReachedEOF = false; //keeps track of whether the last line ended in an EOF (no more lines afterwards)
-char *readLine() {
+char *readLine(void) {
 	if (gReachedEOF) return NULL;
 	int length = 0; //length of string without '\0'
 	char *currentLine = malloc((length + 1) * sizeof(char));
