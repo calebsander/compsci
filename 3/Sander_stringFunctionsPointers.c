@@ -1,10 +1,17 @@
+/*
+	Caleb Sander
+	10/09/2015
+	stringFunctionsPointers.c
+	Some exercises writing string functions
+*/
+
 #include <stdbool.h>
 #include <stdio.h>
 
 char *strcat(char *s, char *add) {
 	char *sOrig = s;
 	for (; *s; s++);
-	while ((*(s++) = *(add++)));
+	for (; (*s = *add); s++, add++);
 	return sOrig;
 }
 bool strend(char *s, char *end) {
@@ -40,6 +47,8 @@ int main() {
 	printf("abc\t%s\n", strcat(noCat, ""));
 	char noStart[10] = "";
 	printf("def\t%s\n", strcat(noStart, "def"));
+	char weirdLength[10] = "ab";
+	printf("ab01234\t%s\n", strcat(weirdLength, "01234"));
 	printf("strend:\n");
 	printf("1\t%d\n", strend("abcd", "bcd"));
 	printf("1\t%d\n", strend("abc", "abc"));
