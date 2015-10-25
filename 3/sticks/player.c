@@ -48,7 +48,7 @@ int genNextMove(Player *player, unsigned int sticksLeft) {
 			printf(", how many do you want to take? ");
 			while (true) {
 				scanf("%u", &sticksToRemove);
-				if (sticksToRemove > 0 && sticksToRemove < 4 && sticksLeft - sticksToRemove >= 0) break;
+				if (sticksToRemove > 0 && sticksToRemove < 4 && sticksLeft >= sticksToRemove) break;
 				printf("I'm sorry, %s, but you can't take %u. How many do you want to take? ", player->name, sticksToRemove);
 			}
 	}
