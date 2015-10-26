@@ -43,12 +43,12 @@ int main() {
 	scanf("%u", &sticksLeft);
 	unsigned int turn = 0;
 	while (sticksLeft) {
-		sticksLeft -= genNextMove(&players[turn % 2], sticksLeft);
+		sticksLeft -= genNextMove(&players[turn % NUM_PLAYERS], sticksLeft);
 		turn++;
 	}
 	printf("No more sticks! ");
-	printf("%s", players[(turn + 1) % 2].name);
+	printf("%s", players[(turn + 1) % NUM_PLAYERS].name);
 	printf(", you lose. Oops. ");
-	printf("%s", players[turn % 2].name);
+	printf("%s", players[turn % NUM_PLAYERS].name);
 	puts(", you win. Yay!");
 }

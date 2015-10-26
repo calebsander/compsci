@@ -3,7 +3,6 @@ typedef enum {
 	SMART,
 	HUMAN
 } PlayerType;
-
 typedef struct {
 	PlayerType type;
 	char *name;
