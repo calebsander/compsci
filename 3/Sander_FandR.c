@@ -178,18 +178,30 @@ unsigned int getNextIndex(Flag flag, unsigned int insertionIndex, unsigned int i
 			return 0; //go back to beginning for START
 	}
 }
-bool runReplacement(char *line, ReplacementRule *rule, Flag flag) { //returns success
+//Takes in a malloc'd line and runs the replacement with a certain flag
+//returns success of replacement
+bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
+	if ((flag == RESCAN || flag == START) && !strcmp(rule->from, rule->to)) {
+		return false; //no replacement would be made
+	}
 	unsigned int index = 0;
 	bool changedLastTime = true;
 	bool anchorConditionsMet;
 	bool success = false;
 	const unsigned int fromLength = strlen(rule->from);
 	const unsigned int insertionLength = strlen(rule->to);
-	GrowableString *wrappedLine = newStringFromMallocd(line);
-	while (changedLastTime) {
+	GrowableString *wrappedLine = newStringFromMallocd(line); //when this is 
+	while (changedLastTime) { //keep going while a change was made
 		anchorConditionsMet = true;
-		if (rule->atStart && !strncmp(rule->from, wrappedLine->string, fromLength)) anchorConditionsMet = false;
-		else if (rule->atEnd && !strncmp(rule->from, wrappedLine->string + strlen(wrappedLine->string) - fromLength, fromLength)) anchorConditionsMet = false;
+		//Anchor conditions are not met if anchoring to start and starts don't match
+		//or anchoring to end and ends don't match
+		if (rule->atStart && strncmp(rule->from, wrappedLine->string, fromLength)) {
+			anchorConditionsMet = false;
+		}
+		if (rule->atEnd) {
+			index = wrappedLine->length - fromLength; //make sure to only match at end
+			if (strncmp(rule->from, wrappedLine->string + index, fromLength)) anchorConditionsMet = false;
+		}
 		printf("Anchor: %d\n", anchorConditionsMet);
 		if (anchorConditionsMet) {
 			char *foundIndex = strstr(wrappedLine->string + index, rule->from);
