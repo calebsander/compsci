@@ -4,33 +4,42 @@
 #include <string.h>
 //#include "getLine.h"
 
+#define DEFAULT_START_LENGTH 16 //allocation size for new GrowableString
+
+//Stores a string that can easily be resized
 typedef struct {
 	char *string; //'\0'-terminated
 	unsigned int length; //doesn't include '\0'
-	unsigned int allocatedLength;
+	unsigned int allocatedLength; //number of chars to allocate for string
 } GrowableString;
 
+//Allocate the necessary memory to store the desired length
 void allocateCharacters(GrowableString *string) {
 	unsigned int allocSize = sizeof(*(string->string)) * string->allocatedLength;
 	if (string->string) string->string = realloc(string->string, allocSize);
 	else string->string = malloc(allocSize);
 }
+//If memory needs to be expanded, allocate twice as much as necessary
 void allocateExtra(GrowableString *string) {
-	unsigned int necessarySize = string->length + 1;
-	if (necessarySize > string->allocatedLength) { //I don't always realloc
-		string->allocatedLength = necessarySize * 2; //but when I do, I prefer to realloc dos as much
+	unsigned int necessarySize = string->length + 1; //need to store '\0' too
+	if (necessarySize > string->allocatedLength) {
+		//I don't always realloc
+		//but when I do, I prefer to realloc dos times as much
+		string->allocatedLength = necessarySize * 2;
 		allocateCharacters(string);
 	}
 }
+//Make an empty GrowableString
 GrowableString *emptyString() {
-	GrowableString *string = malloc(sizeof(*string) * 1);
+	GrowableString *string = malloc(sizeof(*string));
 	string->string = NULL; //signal that it needs to be allocated
 	string->length = 0;
-	string->allocatedLength = 16;
+	string->allocatedLength = DEFAULT_START_LENGTH;
 	allocateCharacters(string);
 	*(string->string) = '\0';
 	return string;
 }
+//Make a GrowableString to wrap an already malloc'd string
 GrowableString *newStringFromMallocd(char *mallocdString) {
 	GrowableString *string = malloc(sizeof(*string));
 	string->string = mallocdString;
@@ -39,6 +48,7 @@ GrowableString *newStringFromMallocd(char *mallocdString) {
 	string->allocatedLength = length + 1;
 	return string;
 }
+//Free the GrowableString memory and the allocated string
 void freeString(GrowableString *string) {
 	free(string->string);
 	free(string);
@@ -51,13 +61,19 @@ void concat(GrowableString *onto, char from) {
 	*insertionIndex = from;
 	*(insertionIndex + 1) = '\0';
 }
+/*Replaces a section of a string with a new string; strategy:
+	We have "aaaxxbbb\0" where xx is the part to replace. We want:
+	        "aaayyybbb\0"
+	1. Move bbb\0 to the new position:
+	        "aaaxx?bbb\0"
+	2. Insert replacement at the position (without '\0')
+*/
 void insertAt(GrowableString *string, unsigned int index, unsigned int deleteLength, char *insertString) {
 	const unsigned int insertLength = strlen(insertString);
 	string->length += insertLength;
 	string->length -= deleteLength;
 	allocateExtra(string);
 	const unsigned int indexAfterInsertion = index + insertLength;
-	//Correct these to account for actual sizeof(char)
 	memmove(string->string + indexAfterInsertion, string->string + index + deleteLength, (string->length + 1 - indexAfterInsertion) * sizeof(char)); //copy null byte too
 	memcpy(string->string + index, insertString, insertLength * sizeof(char));
 }
@@ -66,8 +82,7 @@ typedef enum {
 	QUIT, NEXT, RESCAN, START, INVALID
 } Flag;
 typedef struct {
-	char *from;
-	char *to;
+	char *from, *to;
 	bool atStart, atEnd;
 } ReplacementRule;
 typedef struct {
@@ -153,16 +168,14 @@ Flags parseFlags(char *string) {
 	}
 	return flags;
 }
-unsigned int getNextSearchIndex(Flag flag, unsigned int insertionIndex, unsigned int insertionLength) {
+unsigned int getNextIndex(Flag flag, unsigned int insertionIndex, unsigned int insertionLength) {
 	switch (flag) {
 		case NEXT:
 			return insertionIndex + insertionLength;
 		case RESCAN:
 			return insertionIndex;
-		case START:
-			return 0;
 		default:
-			return 0; //doesn't matter for QUIT or INVALID
+			return 0; //go back to beginning for START
 	}
 }
 bool runReplacement(char *line, ReplacementRule *rule, Flag flag) { //returns success
@@ -186,7 +199,7 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) { //returns su
 				insertAt(wrappedLine, insertionIndex, fromLength, rule->to);
 				changedLastTime = flag != QUIT;
 				success = true;
-				index = getNextSearchIndex(flag, insertionIndex, insertionLength);
+				index = getNextIndex(flag, insertionIndex, insertionLength);
 			}
 			else changedLastTime = false;
 		}
@@ -195,28 +208,13 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) { //returns su
 	free(wrappedLine);
 	return success;
 }
-unsigned int getNextRuleIndex(Flag flag, unsigned int index, bool success) {
-	switch (flag) {
-		case NEXT:
-			if (success) return index + 1;
-			else return index;
-		case RESCAN:
-			if (success) return index;
-			else return index + 1;
-		case START:
-			if (success) return 0;
-			else return index + 1;
-		default:
-			return 0; //doesn't matter for QUIT or INVALID
-	}
-}
 
 int main(int argc, char **argv) {
-	Flags flags = {NEXT, NEXT};
-	argc -= 1;
+	argc -= 1; //don't count argument to run the program
 	argv++;
+	Flags flags = {NEXT, NEXT};
 	if (argc % 2) { //options flag
-		flags = parseFlags(argv[0]);
+		flags = parseFlags(*argv);
 		if (flags.meta == INVALID) flags.meta = NEXT;
 		if (flags.rule == INVALID) flags.rule = NEXT;
 		argv++;
@@ -227,15 +225,16 @@ int main(int argc, char **argv) {
 		rules[i] = parseRule(argv[i * 2], argv[i * 2 + 1]);
 		printf("Rule: %s, %s, %d, %d\n", rules[i]->from, rules[i]->to, rules[i]->atStart, rules[i]->atEnd);
 	}
-	char *origLine = "aabbab";
+	char *origLine = "aaabbb";
 	char *line = malloc(strlen(origLine) + 1);
 	strcpy(line, origLine);
 	unsigned int index = 0;
 	bool changedLastTime = false;
-	while (index != numRules && !(changedLastTime && flags.meta == QUIT)) {
+	while (index != numRules && !(flags.meta == QUIT && changedLastTime)) {
 		printf("\nRule Index: %u\n", index);
 		changedLastTime = runReplacement(line, rules[index], flags.rule);
-		index = getNextRuleIndex(flags.meta, index, changedLastTime);
+		if (changedLastTime) index = getNextIndex(flags.meta, index, 1);
+		else index++;
 		printf("Changed: %d ", changedLastTime);
 		printf("Replaced: %s\n", line);
 	}
