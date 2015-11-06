@@ -1,6 +1,6 @@
 /*
 	Caleb Sander
-	11/04/2015
+	11/03/2015
 	Sander_FandR.c
 	Does various replacement algorithms specified on command line to stdin
 */
@@ -143,7 +143,7 @@ void freeRule(ReplacementRule *rule) {
 	free(rule->from);
 	free(rule);
 }
-//Display error in argument
+//Alert that there was an error in the arguments and exit the program
 void argumentError() {
 	fputs("Syntax:\tFandR [-SRNQsrnq] [FROM TO]*\n", stderr);
 	exit(EXIT_FAILURE);
@@ -161,7 +161,7 @@ Flags parseFlags(char *string) {
 	if (*string != '-') argumentError();
 	Flags flags = {INVALID, INVALID};
 	char lowerChar; //current flag character in lower case
-	Flag processedFlag;
+	Flag processedFlag; //Flag corresponding to current character
 	for (string++; *string; string++) {
 		if (isLowerCase(*string)) lowerChar = *string;
 		else lowerChar = *string - 'A' + 'a';
@@ -226,13 +226,13 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
 		}
 		printf("Anchor: %d\n", anchorConditionsMet); //DEBUG
 		if (anchorConditionsMet) {
-			char *foundIndex = strstr(wrappedLine->string + index, rule->from);
+			const char *foundIndex = strstr(wrappedLine->string + index, rule->from);
 			printf("Index: %d\n", (int)(foundIndex ? foundIndex - wrappedLine->string : -1)); //DEBUG
-			if (foundIndex) {
-				uint insertionIndex = foundIndex - wrappedLine->string;
+			if (foundIndex) { //if a match was found at or after the current index
+				const uint insertionIndex = foundIndex - wrappedLine->string;
 				insertAt(wrappedLine, insertionIndex, fromLength, rule->to);
 				reapplyRule = flag != QUIT; //don't keep going
-				success = true;
+				success = true; //at least one replacement was made
 				index = getNextIndex(flag, insertionIndex, insertionLength);
 			}
 			else reapplyRule = false;
@@ -254,14 +254,14 @@ int main(int argc, char **argv) {
 	}
 	const uint numRules = (argc / 2); //the number of pairs of strings
 	ReplacementRule **rules = malloc(sizeof(*rules) * numRules);
-	for (uint i = 0; argv[i * 2]; i++) {
+	for (uint i = 0; argv[i * 2]; i++) { //go through arguments 2 at a time
 		rules[i] = parseRule(argv[i * 2], argv[i * 2 + 1]);
 		printf("Rule: %s, %s, %d, %d\n", rules[i]->from, rules[i]->to, rules[i]->atStart, rules[i]->atEnd); //DEBUG
 	}
 	char *origLine = "aaabbb";
 	char *line = malloc(strlen(origLine) + 1);
 	strcpy(line, origLine);
-	//for ((line = getLine())) {
+	//while ((line = getLine())) {
 		uint index = 0;
 		bool changedLastTime = false;
 		//If we get to what would be the rule following the last
