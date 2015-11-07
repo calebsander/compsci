@@ -207,6 +207,7 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
 	bool reapplyRule = true; //whether the rule needs to be reapplied
 	bool anchorConditionsMet; //whether each present anchor is satisfied by line
 	bool success = false; //whether any replacement ever happened
+	uint lengthOfLine; //the number of characters in the line without '\n'
 	const uint fromLength = strlen(rule->from);
 	const uint insertionLength = strlen(rule->to);
 	//Wrap the line; when wrappedLine is changed, it will affect line
@@ -219,7 +220,11 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
 			anchorConditionsMet = false;
 		}
 		if (rule->atEnd) {
-			index = wrappedLine->length - fromLength; //make sure to only match at end
+			lengthOfLine = wrappedLine->length;
+			if (lengthOfLine && wrappedLine->string[lengthOfLine - 1] == '\n') {
+				lengthOfLine--;
+			}
+			index = lengthOfLine - fromLength; //make sure to only match at end
 			if (strncmp(rule->from, wrappedLine->string + index, fromLength)) {
 				anchorConditionsMet = false;
 			}
@@ -258,7 +263,7 @@ int main(int argc, char **argv) {
 		rules[i] = parseRule(argv[i * 2], argv[i * 2 + 1]);
 		printf("Rule: %s, %s, %d, %d\n", rules[i]->from, rules[i]->to, rules[i]->atStart, rules[i]->atEnd); //DEBUG
 	}
-	char *origLine = "aaabbb";
+	char *origLine = "abcdef\n";
 	char *line = malloc(strlen(origLine) + 1);
 	strcpy(line, origLine);
 	//while ((line = getLine())) {

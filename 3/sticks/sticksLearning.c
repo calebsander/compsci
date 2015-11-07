@@ -59,4 +59,5 @@ int main() {
 	}
 	if (humanTurn) puts("You won!"); //human won since computer played last
 	else puts("Computer won."); //computer won
+	for (unsigned int i = 0; i < PLAYERS; i++) freePlayer(players[i]);
 }

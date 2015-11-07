@@ -8,7 +8,7 @@ char *getLine(void) {
 	if (gReachedEOF) return NULL;
 	unsigned int length = 0; //length of string without '\0'
 	unsigned int allocatedSize = 1;
-	char *currentLine = malloc((allocatedSize) * sizeof(*currentLine));
+	char *currentLine = malloc(allocatedSize * sizeof(*currentLine));
 	char readChar;
 	while ((readChar = getchar()) != EOF && readChar != '\n') { //keep reading until hitting the end of a line or EOF
 		if (length + 1 == allocatedSize) {
@@ -51,4 +51,5 @@ int main() {
 	printf(", you lose. Oops. ");
 	printf("%s", players[turn % NUM_PLAYERS].name);
 	puts(", you win. Yay!");
+	for (unsigned int i = 0; i < NUM_PLAYERS; i++) free(players[i].name);
 }

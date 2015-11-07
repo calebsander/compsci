@@ -17,3 +17,4 @@ LearningPlayer *newLearningPlayer(unsigned int maxSticks);
 void recordWin(LearningPlayer *player);
 void recordLoss(LearningPlayer *player);
 unsigned char genNextMove(LearningPlayer *player, unsigned int sticksRemaining);
+void freePlayer(LearningPlayer *player);

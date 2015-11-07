@@ -51,3 +51,8 @@ unsigned char genNextMove(LearningPlayer *player, unsigned int sticksLeft) {
 	}
 	return 0; //should never happen
 }
+void freePlayer(LearningPlayer *player) {
+	free(player->strategy);
+	free(player->currentPicks);
+	free(player);
+}
