@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include "getLine.h"
+#include "getLine.h"
 
 #define DEFAULT_START_LENGTH 16 //allocation size for new GrowableString
 typedef unsigned int uint;
@@ -197,9 +197,9 @@ uint getNextIndex(Flag flag, uint insertionIndex, uint insertionLength) {
 			return 0; //go back to beginning for START, doesn't matter for QUIT
 	}
 }
-//Takes in a malloc'd line and runs the replacement with a certain flag
+//Takes in a pointer to a malloc'd line and runs the replacement with a certain flag
 //returns success of replacement
-bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
+bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 	if ((flag == RESCAN || flag == START) && !strcmp(rule->from, rule->to)) {
 		return false; //no replacement would be made
 	}
@@ -210,8 +210,8 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
 	uint lengthOfLine; //the number of characters in the line without '\n'
 	const uint fromLength = strlen(rule->from);
 	const uint insertionLength = strlen(rule->to);
-	//Wrap the line; when wrappedLine is changed, it will affect line
-	GrowableString *wrappedLine = newStringFromMallocd(line);
+	//Wrap the line for easier modification
+	GrowableString *wrappedLine = newStringFromMallocd(*line);
 	while (reapplyRule) { //keep going while a change was made
 		anchorConditionsMet = true;
 		//Anchor conditions are not met if anchoring to start and starts don't match
@@ -229,10 +229,10 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
 				anchorConditionsMet = false;
 			}
 		}
-		printf("Anchor: %d\n", anchorConditionsMet); //DEBUG
+		//printf("Anchor: %d\n", anchorConditionsMet); //DEBUG
 		if (anchorConditionsMet) {
 			const char *foundIndex = strstr(wrappedLine->string + index, rule->from);
-			printf("Index: %d\n", (int)(foundIndex ? foundIndex - wrappedLine->string : -1)); //DEBUG
+			//printf("Index: %d\n", (int)(foundIndex ? foundIndex - wrappedLine->string : -1)); //DEBUG
 			if (foundIndex) { //if a match was found at or after the current index
 				const uint insertionIndex = foundIndex - wrappedLine->string;
 				insertAt(wrappedLine, insertionIndex, fromLength, rule->to);
@@ -245,6 +245,7 @@ bool runReplacement(char *line, ReplacementRule *rule, Flag flag) {
 		else reapplyRule = false;
 	}
 	free(wrappedLine); //just free wrapper, not line itself
+	*line = wrappedLine->string;
 	return success;
 }
 
@@ -261,27 +262,25 @@ int main(int argc, char **argv) {
 	ReplacementRule **rules = malloc(sizeof(*rules) * numRules);
 	for (uint i = 0; argv[i * 2]; i++) { //go through arguments 2 at a time
 		rules[i] = parseRule(argv[i * 2], argv[i * 2 + 1]);
-		printf("Rule: %s, %s, %d, %d\n", rules[i]->from, rules[i]->to, rules[i]->atStart, rules[i]->atEnd); //DEBUG
+		//printf("Rule: %s, %s, %d, %d\n", rules[i]->from, rules[i]->to, rules[i]->atStart, rules[i]->atEnd); //DEBUG
 	}
-	char *origLine = "abcdef\n";
-	char *line = malloc(strlen(origLine) + 1);
-	strcpy(line, origLine);
-	//while ((line = getLine())) {
+	char *line;
+	while ((line = getLine())) {
 		uint index = 0;
 		bool changedLastTime = false;
 		//If we get to what would be the rule following the last
 		//or flag was 'Q' and
 		while (index != numRules && !(flags.meta == QUIT && changedLastTime)) {
-			printf("\nRule Index: %u\n", index); //DEBUG
-			changedLastTime = runReplacement(line, rules[index], flags.rule);
+			//printf("\nRule Index: %u\n", index); //DEBUG
+			changedLastTime = runReplacement(&line, rules[index], flags.rule);
 			if (changedLastTime) index = getNextIndex(flags.meta, index, 1);
 			else index++;
-			printf("Changed: %d ", changedLastTime); //DEBUG
-			printf("Replaced: %s\n", line); //DEBUG
+			//printf("Changed: %d ", changedLastTime); //DEBUG
+			//printf("Replaced: %s\n", line); //DEBUG
 		}
-		//printf("%s", line);
+		printf("%s", line);
 		free(line);
-	//}
+	}
 	for (uint i = 0; i < numRules; i++) freeRule(rules[i]);
 	free(rules);
 }
