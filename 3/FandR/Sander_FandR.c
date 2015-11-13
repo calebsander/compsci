@@ -31,8 +31,7 @@ void allocateCharacters(GrowableString *string) {
 void allocateExtra(GrowableString *string) {
 	uint necessarySize = string->length + 1; //need to store '\0' too
 	if (necessarySize > string->allocatedLength) {
-		//I don't always realloc
-		//but when I do, I prefer to realloc dos times as much
+		//I don't always realloc but when I do, I prefer dos times as much
 		string->allocatedLength = necessarySize * 2;
 		allocateCharacters(string);
 	}
@@ -197,7 +196,7 @@ uint getNextIndex(Flag flag, uint insertionIndex, uint insertionLength) {
 			return 0; //go back to beginning for START, doesn't matter for QUIT
 	}
 }
-//Takes in a pointer to a malloc'd line and runs the replacement with a certain flag
+//Takes in a pointer to a malloc'd line and runs the replacement with the flag
 //returns success of replacement
 bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 	if ((flag == RESCAN || flag == START) && !strcmp(rule->from, rule->to)) {
@@ -229,10 +228,8 @@ bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 				anchorConditionsMet = false;
 			}
 		}
-		//printf("Anchor: %d\n", anchorConditionsMet); //DEBUG
 		if (anchorConditionsMet) {
 			const char *foundIndex = strstr(wrappedLine->string + index, rule->from);
-			//printf("Index: %d\n", (int)(foundIndex ? foundIndex - wrappedLine->string : -1)); //DEBUG
 			if (foundIndex) { //if a match was found at or after the current index
 				const uint insertionIndex = foundIndex - wrappedLine->string;
 				insertAt(wrappedLine, insertionIndex, fromLength, rule->to);
@@ -262,7 +259,6 @@ int main(int argc, char **argv) {
 	ReplacementRule **rules = malloc(sizeof(*rules) * numRules);
 	for (uint i = 0; argv[i * 2]; i++) { //go through arguments 2 at a time
 		rules[i] = parseRule(argv[i * 2], argv[i * 2 + 1]);
-		//printf("Rule: %s, %s, %d, %d\n", rules[i]->from, rules[i]->to, rules[i]->atStart, rules[i]->atEnd); //DEBUG
 	}
 	char *line;
 	while ((line = getLine())) {
@@ -271,12 +267,9 @@ int main(int argc, char **argv) {
 		//If we get to what would be the rule following the last
 		//or flag was 'Q' and
 		while (index != numRules && !(flags.meta == QUIT && changedLastTime)) {
-			//printf("\nRule Index: %u\n", index); //DEBUG
 			changedLastTime = runReplacement(&line, rules[index], flags.rule);
 			if (changedLastTime) index = getNextIndex(flags.meta, index, 1);
 			else index++;
-			//printf("Changed: %d ", changedLastTime); //DEBUG
-			//printf("Replaced: %s\n", line); //DEBUG
 		}
 		printf("%s", line);
 		free(line);
