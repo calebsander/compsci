@@ -22,18 +22,20 @@ typedef struct {
 } GrowableString;
 
 //Allocate the necessary memory to store the desired length
-void allocateCharacters(GrowableString *string) {
-	uint allocSize = sizeof(*(string->string)) * string->allocatedLength;
+void allocateCharacters(GrowableString *string, uint allocatedLength) {
+	string->allocatedLength = allocatedLength;
+	uint allocSize = sizeof(*(string->string)) * allocatedLength;
+	//If string has already been allocated, realloc; otherwise, just malloc
 	if (string->string) string->string = realloc(string->string, allocSize);
 	else string->string = malloc(allocSize);
 }
 //If memory needs to be expanded, allocate twice as much as necessary
-void allocateExtra(GrowableString *string) {
-	uint necessarySize = string->length + 1; //need to store '\0' too
+void allocateExtra(GrowableString *string, uint length) {
+	string->length = length;
+	uint necessarySize = length + 1; //need to store '\0' too
 	if (necessarySize > string->allocatedLength) {
-		//I don't always realloc but when I do, I prefer dos times as much
-		string->allocatedLength = necessarySize * 2;
-		allocateCharacters(string);
+		//I don't always realloc, but when I do, I prefer dos times as much
+		allocateCharacters(string, necessarySize * 2);
 	}
 }
 //Make an empty GrowableString
@@ -41,8 +43,7 @@ GrowableString *emptyString() {
 	GrowableString *string = malloc(sizeof(*string));
 	string->string = NULL; //signal that it needs to be allocated
 	string->length = 0;
-	string->allocatedLength = DEFAULT_START_LENGTH;
-	allocateCharacters(string);
+	allocateCharacters(string, DEFAULT_START_LENGTH);
 	*(string->string) = '\0';
 	return string;
 }
@@ -50,17 +51,15 @@ GrowableString *emptyString() {
 GrowableString *newStringFromMallocd(char *mallocdString) {
 	GrowableString *string = malloc(sizeof(*string));
 	string->string = mallocdString;
-	uint length = strlen(mallocdString);
-	string->length = length;
-	string->allocatedLength = length + 1;
+	string->length = strlen(mallocdString);
+	string->allocatedLength = string->length + 1; //'\0' was allocated too
 	return string;
 }
 
 //Adds a character onto a GrowableString
 void concat(GrowableString *onto, char from) {
 	char *insertionIndex = onto->string + onto->length;
-	onto->length++;
-	allocateExtra(onto);
+	allocateExtra(onto, onto->length + 1);
 	*insertionIndex = from; //replace null byte with new byte
 	*(insertionIndex + 1) = '\0'; //add new null byte
 }
@@ -74,9 +73,7 @@ void concat(GrowableString *onto, char from) {
 void insertAt(GrowableString *string, uint index, uint deleteLength,
  char *insertString) {
 	const uint insertLength = strlen(insertString);
-	string->length += insertLength;
-	string->length -= deleteLength;
-	allocateExtra(string);
+	allocateExtra(string, string->length + insertLength - deleteLength);
 	const uint indexAfterInsertion = index + insertLength;
 	memmove(
 		string->string + indexAfterInsertion,
@@ -88,7 +85,7 @@ void insertAt(GrowableString *string, uint index, uint deleteLength,
 
 //Stores a flag that indicates how to scan the strings or switch between rules
 typedef enum {
-	QUIT, NEXT, RESCAN, START, INVALID
+	QUIT, NEXT, RESCAN, START
 } Flag;
 //Stores a string to replace with another string and where it is anchored
 typedef struct {
@@ -158,7 +155,7 @@ bool isLowerCase(char c) {
 //Parse a flag string - doesn't return a pointer since Flags has same size
 Flags parseFlags(char *string) {
 	if (*string != '-') argumentError();
-	Flags flags = {INVALID, INVALID};
+	Flags flags = {NEXT, NEXT};
 	char lowerChar; //current flag character in lower case
 	Flag processedFlag; //Flag corresponding to current character
 	for (string++; *string; string++) {
@@ -185,13 +182,15 @@ Flags parseFlags(char *string) {
 	}
 	return flags;
 }
-//Calculates the next index to search at/rule to use based on the flag
-uint getNextIndex(Flag flag, uint insertionIndex, uint insertionLength) {
+/*Calculates the next index to search at/rule to use based on the flag
+	lastIndex is the index of the start of the last thing done,
+	lastLength is the number of indices that the last thing applied to*/
+uint getNextIndex(Flag flag, uint lastIndex, uint lastLength) {
 	switch (flag) {
 		case NEXT:
-			return insertionIndex + insertionLength;
+			return lastIndex + lastLength;
 		case RESCAN:
-			return insertionIndex;
+			return lastIndex;
 		default:
 			return 0; //go back to beginning for START, doesn't matter for QUIT
 	}
@@ -248,14 +247,16 @@ bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 
 int main(int argc, char **argv) {
 	argv++; argc -= 1; //don't count argument to run the program
-	Flags flags = {NEXT, NEXT};
+	Flags flags;
 	if (argc % 2) { //options flag exists
 		flags = parseFlags(*argv);
-		if (flags.meta == INVALID) flags.meta = NEXT; //set defaults
-		if (flags.rule == INVALID) flags.rule = NEXT;
 		argv++; //make sure argv points to first FROM
 	}
-	const uint numRules = (argc / 2); //the number of pairs of strings
+	else {
+		flags.rule = NEXT;
+		flags.meta = NEXT;
+	}
+	const uint numRules = argc / 2; //the number of pairs of strings
 	ReplacementRule **rules = malloc(sizeof(*rules) * numRules);
 	for (uint i = 0; argv[i * 2]; i++) { //go through arguments 2 at a time
 		rules[i] = parseRule(argv[i * 2], argv[i * 2 + 1]);
