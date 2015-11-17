@@ -16,12 +16,14 @@ typedef unsigned int uint;
 
 //Stores a string that can easily be resized
 typedef struct {
-	char *string; //'\0'-terminated
-	uint length; //doesn't include '\0'
-	uint allocatedLength; //number of chars to allocate for string
+	char *string; //a normal malloc'd string, '\0'-terminated
+	uint length; //length of string, doesn't include '\0'
+	uint allocatedLength; //number of chars allocated for string
 } GrowableString;
 
-//Allocate the necessary memory to store the desired length
+/*Allocate the necessary memory to store the desired length
+	string is the string whose memory should be allocated
+	allocatedLength is the number of chars to allocate*/
 void allocateCharacters(GrowableString *string, uint allocatedLength) {
 	string->allocatedLength = allocatedLength;
 	uint allocSize = sizeof(*(string->string)) * allocatedLength;
@@ -29,7 +31,9 @@ void allocateCharacters(GrowableString *string, uint allocatedLength) {
 	if (string->string) string->string = realloc(string->string, allocSize);
 	else string->string = malloc(allocSize);
 }
-//If memory needs to be expanded, allocate twice as much as necessary
+/*If memory needs to be expanded, allocate twice as much as necessary
+	string is the string whose memory should be allocated if it is unsufficient
+	length is the number of characters in the string (exclusing '\0')*/
 void allocateExtra(GrowableString *string, uint length) {
 	string->length = length;
 	uint necessarySize = length + 1; //need to store '\0' too
@@ -47,7 +51,8 @@ GrowableString *emptyString() {
 	*(string->string) = '\0';
 	return string;
 }
-//Make a GrowableString to wrap an already malloc'd string
+/*Make a GrowableString to wrap an already malloc'd string
+	mallocString is a pointer to the string*/
 GrowableString *newStringFromMallocd(char *mallocdString) {
 	GrowableString *string = malloc(sizeof(*string));
 	string->string = mallocdString;
@@ -56,21 +61,28 @@ GrowableString *newStringFromMallocd(char *mallocdString) {
 	return string;
 }
 
-//Adds a character onto a GrowableString
-void concat(GrowableString *onto, char from) {
+/*Adds a character at the end of a GrowableString
+	onto is the GrowableString
+	character is the additional character*/
+void concat(GrowableString *onto, char character) {
 	char *insertionIndex = onto->string + onto->length;
 	allocateExtra(onto, onto->length + 1);
-	*insertionIndex = from; //replace null byte with new byte
+	*insertionIndex = character; //replace null byte with new byte
 	*(insertionIndex + 1) = '\0'; //add new null byte
 }
 /*Replaces a section of a string with a new string
+	string is the string to operate on
+	index is the index of the first character getting overwritten
+	deleteLength is the length of the string being removed
+	insertString is the string to be inserted
 	We have "aaaxxbbb\0" where xx is the part to replace. We want:
 	        "aaayyybbb\0"
 	1. Move bbb\0 to the new position:
 	        "aaaxx?bbb\0"
-	2. Insert replacement at the position (without '\0')
-*/
-void insertAt(GrowableString *string, uint index, uint deleteLength,
+	2. Insert replacement at the position (without '\0')*/
+void insertAt(GrowableString *string, 
+ uint index, 
+ uint deleteLength,
  char *insertString) {
 	const uint insertLength = strlen(insertString);
 	allocateExtra(string, string->length + insertLength - deleteLength);
@@ -97,7 +109,10 @@ typedef struct {
 	Flag rule, meta; //for a single rule, between the rules
 } Flags;
 
-//Reads a replacement string into search string and anchors
+/*Reads a replacement string into search string and anchors
+	fromString is the CL arg string that matches strings to be replaced
+	toString is the CL arg string to replace it with
+*/
 ReplacementRule *parseRule(char *fromString, char *toString) {
 	ReplacementRule *rule = malloc(sizeof(*rule));
 	if (*fromString == '^') {
@@ -152,7 +167,7 @@ bool isUpperCase(char c) {
 bool isLowerCase(char c) {
 	return 'a' <= c && c <= 'z';
 }
-//Parse a flag string - doesn't return a pointer since Flags has same size
+//Parse a flag string - doesn't return a pointer since sizeof(Flags) == 8
 Flags parseFlags(char *string) {
 	if (*string != '-') argumentError();
 	Flags flags = {NEXT, NEXT};
@@ -202,13 +217,12 @@ bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 		return false; //no replacement would be made
 	}
 	uint index = 0; //index to start replacing at
-	bool reapplyRule = true; //whether the rule needs to be reapplied
+	bool reapplyRule = true;
 	bool anchorConditionsMet; //whether each present anchor is satisfied by line
 	bool success = false; //whether any replacement ever happened
 	uint lengthOfLine; //the number of characters in the line without '\n'
 	const uint fromLength = strlen(rule->from);
 	const uint insertionLength = strlen(rule->to);
-	//Wrap the line for easier modification
 	GrowableString *wrappedLine = newStringFromMallocd(*line);
 	while (reapplyRule) { //keep going while a change was made
 		anchorConditionsMet = true;
@@ -240,8 +254,8 @@ bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 		}
 		else reapplyRule = false;
 	}
-	free(wrappedLine); //just free wrapper, not line itself
 	*line = wrappedLine->string;
+	free(wrappedLine); //just free wrapper, not line itself
 	return success;
 }
 
@@ -263,14 +277,14 @@ int main(int argc, char **argv) {
 	}
 	char *line;
 	while ((line = getLine())) {
-		uint index = 0;
+		uint ruleIndex = 0;
 		bool changedLastTime = false;
 		//If we get to what would be the rule following the last
-		//or flag was 'Q' and
-		while (index != numRules && !(flags.meta == QUIT && changedLastTime)) {
-			changedLastTime = runReplacement(&line, rules[index], flags.rule);
-			if (changedLastTime) index = getNextIndex(flags.meta, index, 1);
-			else index++;
+		//or flag was 'Q' and replacement was successful
+		while (ruleIndex != numRules && !(flags.meta == QUIT && changedLastTime)) {
+			changedLastTime = runReplacement(&line, rules[ruleIndex], flags.rule);
+			if (changedLastTime) ruleIndex = getNextIndex(flags.meta, ruleIndex, 1);
+			else ruleIndex++;
 		}
 		printf("%s", line);
 		free(line);
