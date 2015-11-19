@@ -12,6 +12,9 @@
 #include "getLine.h"
 
 #define DEFAULT_START_LENGTH 16 //allocation size for new GrowableString
+#define START_ANCHOR '^' //character signalling anchor to start
+#define FROM_ESCAPE '@' //escape character in FROM string
+#define END_ANCHOR '#' //character signalling anchor to end
 typedef unsigned int uint;
 
 //Stores a string that can easily be resized
@@ -115,7 +118,7 @@ typedef struct {
 */
 ReplacementRule *parseRule(char *fromString, char *toString) {
 	ReplacementRule *rule = malloc(sizeof(*rule));
-	if (*fromString == '^') {
+	if (*fromString == START_ANCHOR) {
 		rule->atStart = true;
 		fromString++;
 	}
@@ -125,7 +128,7 @@ ReplacementRule *parseRule(char *fromString, char *toString) {
 	char nextChar;
 	for (; *fromString; fromString++) {
 		switch (*fromString) {
-			case '@':
+			case FROM_ESCAPE:
 				nextChar = *(fromString + 1);
 				//if '@' is at end of string, it is just a normal character
 				if (nextChar) {
@@ -134,7 +137,7 @@ ReplacementRule *parseRule(char *fromString, char *toString) {
 				}
 				else concat(normalizedFromString, *fromString);
 				break;
-			case '#':
+			case END_ANCHOR:
 				nextChar = *(fromString + 1);
 				//if '#' is not at end of string, treat it as normal
 				if (nextChar) concat(normalizedFromString, *fromString);
@@ -192,8 +195,8 @@ Flags parseFlags(char *string) {
 			default:
 				argumentError();
 		}
-		if (isUpperCase(*string)) flags.meta = processedFlag;
-		else if (isLowerCase(*string)) flags.rule = processedFlag;
+		if (isLowerCase(*string)) flags.rule = processedFlag;
+		else flags.meta = processedFlag;
 	}
 	return flags;
 }
@@ -272,7 +275,7 @@ int main(int argc, char **argv) {
 	}
 	const uint numRules = argc / 2; //the number of pairs of strings
 	ReplacementRule **rules = malloc(sizeof(*rules) * numRules);
-	for (uint i = 0; argv[i * 2]; i++) { //go through arguments 2 at a time
+	for (uint i = 0; i < numRules; i++) { //go through arguments 2 at a time
 		rules[i] = parseRule(argv[i * 2], argv[i * 2 + 1]);
 	}
 	char *line;
