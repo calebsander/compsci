@@ -217,9 +217,6 @@ uint getNextIndex(Flag flag, uint lastIndex, uint lastLength) {
 //Takes in a pointer to a malloc'd line and runs the replacement with the flag
 //returns success of replacement
 bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
-	if ((flag == RESCAN || flag == START) && !strcmp(rule->from, rule->to)) {
-		return false; //no replacement would be made
-	}
 	int index = 0; //index to start replacing at
 	bool reapplyRule = true;
 	bool anchorConditionsMet; //whether each present anchor is satisfied by line
@@ -249,6 +246,9 @@ bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 		if (anchorConditionsMet) {
 			const char *foundIndex = strstr(wrappedLine->string + index, rule->from);
 			if (foundIndex) { //if a match was found at or after the current index
+				if ((flag == RESCAN || flag == START) && !strcmp(rule->from, rule->to)) {
+					return true; //no replacement would be made
+				}
 				const uint insertionIndex = foundIndex - wrappedLine->string;
 				insertAt(wrappedLine, insertionIndex, fromLength, rule->to);
 				reapplyRule = flag != QUIT; //don't keep going
