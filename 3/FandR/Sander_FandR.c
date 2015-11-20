@@ -68,8 +68,9 @@ GrowableString *newStringFromMallocd(char *mallocdString) {
 	onto is the GrowableString
 	character is the additional character*/
 void concat(GrowableString *onto, char character) {
-	char *insertionIndex = onto->string + onto->length;
-	allocateExtra(onto, onto->length + 1);
+	uint length = onto->length;
+	allocateExtra(onto, length + 1);
+	char *insertionIndex = onto->string + length;
 	*insertionIndex = character; //replace null byte with new byte
 	*(insertionIndex + 1) = '\0'; //add new null byte
 }
@@ -83,8 +84,8 @@ void concat(GrowableString *onto, char character) {
 	1. Move bbb\0 to the new position:
 	        "aaaxx?bbb\0"
 	2. Insert replacement at the position (without '\0')*/
-void insertAt(GrowableString *string, 
- uint index, 
+void insertAt(GrowableString *string,
+ uint index,
  uint deleteLength,
  char *insertString) {
 	const uint insertLength = strlen(insertString);
@@ -130,11 +131,11 @@ ReplacementRule *parseRule(char *fromString, char *toString) {
 		switch (*fromString) {
 			case FROM_ESCAPE:
 				nextChar = *(fromString + 1);
-				//if '@' is at end of string, it is just a normal character
 				if (nextChar) {
 					concat(normalizedFromString, nextChar);
 					fromString++;
 				}
+				//if '@' is at end of string, it is just a normal character
 				else concat(normalizedFromString, *fromString);
 				break;
 			case END_ANCHOR:
@@ -219,7 +220,7 @@ bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 	if ((flag == RESCAN || flag == START) && !strcmp(rule->from, rule->to)) {
 		return false; //no replacement would be made
 	}
-	uint index = 0; //index to start replacing at
+	int index = 0; //index to start replacing at
 	bool reapplyRule = true;
 	bool anchorConditionsMet; //whether each present anchor is satisfied by line
 	bool success = false; //whether any replacement ever happened
@@ -240,7 +241,8 @@ bool runReplacement(char **line, ReplacementRule *rule, Flag flag) {
 				lengthOfLine--;
 			}
 			index = lengthOfLine - fromLength; //make sure to only match at end
-			if (strncmp(rule->from, wrappedLine->string + index, fromLength)) {
+			if (index < 0) anchorConditionsMet = false; //avoids comparing invalid memory
+			else if (strncmp(rule->from, wrappedLine->string + index, fromLength)) {
 				anchorConditionsMet = false;
 			}
 		}
