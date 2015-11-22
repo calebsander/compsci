@@ -1,0 +1,16 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\begin{document}
+	\section{Problem 1}
+		Suppose that $f \in o(g)$. Then $(\forall c \in \mathbb{R})(\exists n_0 \in \mathbb{N})(c > 0 \implies (n > n_0 \implies f(n) \le c \cdot g(n)))$. Specifically, for $c = 1$, $(\exists n_0 \in \mathbb{N})(n > n_0 \implies f(n) \le g(n))$. Therefore $f \in O(g)$.
+	\section{Problem 2}
+		Suppose that $f \in o(g)$ and $h \in O(f)$. Then we have $(\forall c' \in \mathbb{R})(\exists n_0' \in \mathbb{N})(c' > 0 \implies (n > n_0' \implies f(n) \le c' \cdot g(n)))$ and $(\exists c'' \in \mathbb{R})(\exists n_0'' \in \mathbb{N})(c'' > 0 \wedge (n > n_0'' \implies h(n) \le c'' \cdot f(n)))$. Then, for some such $c''$, and any $c' \in \mathbb{R}$ where $c' > 0$, $(\exists n_0' \in \mathbb{N})(n > n_0' \implies f(n) \le \frac{c'}{c''} \cdot g(n))$, which means that $n > \max(n_0', n_0'') \implies h(n) \le c'' \cdot f(n) \le c' \cdot g(n)$. By definition, then, $h \in o(g)$.
+	\section{Problem 3}
+		Suppose that $f \in O(g)$ and $h \in o(f)$. Then we have $(\exists c' \in \mathbb{R})(\exists n_0' \in \mathbb{N})(c' > 0 \wedge (n > n_0' \implies f(n) \le c' \cdot g(n)))$ and $(\forall c'' \in \mathbb{R})(\exists n_0'' \in \mathbb{N})(c'' > 0 \implies (n > n_0'' \implies h(n) \le c'' \cdot f(n)))$. Then, for some such $c'$, and any $c'' \in \mathbb{R}$ where $c'' > 0$, $(\exists n_0'' \in \mathbb{N})(n > n_0'' \implies h(n) \le \frac{c''}{c'} \cdot f(n))$. This means that $n > \max(n_0', n_0'') \implies h(n) \le c'' \cdot g(n)$, i.e. $h \in o(g)$.
+	\section{Problem 4}
+		Suppose that $f \in O(g)$, i.e. $(\exists c \in \mathbb{R})(\exists n_0 \in \mathbb{N})(c > 0 \wedge (n > n_0 \implies f(n) \le c \cdot g(n)))$. Then, for some such $c$ and $n_0$, $n > n_0 \implies f(n) + g(n) \le c \cdot g(n) + g(n) = (c + 1) \cdot g(n)$, i.e. $(f + g) \in O(g)$.
+	\section{Problem 5}
+		Suppose that $f \in O(f')$ and $g \in O(g')$. Then, for $c' > 0$ and $n_0' \in \mathbb{N}$ satisfying $n > n_0' \implies f(n) \le c' \cdot f'(n)$ and $c'' > 0$ and $n_0'' \in \mathbb{N}$ satisfying $n > n_0'' \implies g(n) \le c'' \cdot g'(n)$, $n > \max(n_0', n_0'') \implies f(n) \cdot g(n) \le c' \cdot f'(n) \cdot g(n) \le c'c'' \cdot (f' \cdot g')(n)$. Thus $(f \cdot g) \in O(f' \cdot g')$.
+\end{document}
