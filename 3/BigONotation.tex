@@ -10,7 +10,29 @@
 	\section{Problem 3}
 		Suppose that $f \in O(g)$ and $h \in o(f)$. Then we have $(\exists c' \in \mathbb{R})(\exists n_0' \in \mathbb{N})(c' > 0 \wedge (n > n_0' \implies f(n) \le c' \cdot g(n)))$ and $(\forall c'' \in \mathbb{R})(\exists n_0'' \in \mathbb{N})(c'' > 0 \implies (n > n_0'' \implies h(n) \le c'' \cdot f(n)))$. Then, for some such $c'$, and any $c'' \in \mathbb{R}$ where $c'' > 0$, $(\exists n_0'' \in \mathbb{N})(n > n_0'' \implies h(n) \le \frac{c''}{c'} \cdot f(n))$. This means that $n > \max(n_0', n_0'') \implies h(n) \le c'' \cdot g(n)$, i.e. $h \in o(g)$.
 	\section{Problem 4}
-		Suppose that $f \in O(g)$, i.e. $(\exists c \in \mathbb{R})(\exists n_0 \in \mathbb{N})(c > 0 \wedge (n > n_0 \implies f(n) \le c \cdot g(n)))$. Then, for some such $c$ and $n_0$, $n > n_0 \implies f(n) + g(n) \le c \cdot g(n) + g(n) = (c + 1) \cdot g(n)$, i.e. $(f + g) \in O(g)$.
+		Suppose that $f \in O(g)$, i.e. $(\exists c \in \mathbb{R})(\exists n_0 \in \mathbb{N})(c > 0 \wedge (n > n_0 \implies f(n) \le c \cdot g(n)))$. Then, for some such $c$ and $n_0$, $n > n_0 \implies f(n) + g(n) \le c \cdot g(n) + g(n) = (c + 1) \cdot g(n)$. Therefore, $(f + g) \in O(g)$.
 	\section{Problem 5}
-		Suppose that $f \in O(f')$ and $g \in O(g')$. Then, for $c' > 0$ and $n_0' \in \mathbb{N}$ satisfying $n > n_0' \implies f(n) \le c' \cdot f'(n)$ and $c'' > 0$ and $n_0'' \in \mathbb{N}$ satisfying $n > n_0'' \implies g(n) \le c'' \cdot g'(n)$, $n > \max(n_0', n_0'') \implies f(n) \cdot g(n) \le c' \cdot f'(n) \cdot g(n) \le c'c'' \cdot (f' \cdot g')(n)$. Thus $(f \cdot g) \in O(f' \cdot g')$.
+		Suppose that $f \in O(f')$ and $g \in O(g')$. Then, for $c' > 0$ and $n_0' \in \mathbb{N}$ satisfying $n > n_0' \implies f(n) \le c' \cdot f'(n)$ and $c'' > 0$ and $n_0'' \in \mathbb{N}$ satisfying $n > n_0'' \implies g(n) \le c'' \cdot g'(n)$, $n > \max(n_0', n_0'') \implies (f \cdot g)(n) = f(n) \cdot g(n) \le c' \cdot f'(n) \cdot g(n) \le c'c'' \cdot (f' \cdot g')(n)$. Thus $(f \cdot g) \in O(f' \cdot g')$.
+	\section{Problem 6}
+		Let $x = k + \frac{c}{d}$. Then, for $n > n_0$, $x \ge k + \frac{c}{f(n)} = \frac{k \cdot f(n) + c}{f(n)}$, which is valid because $f(n) \ge d > 0$. Since $f(n) > 0$, we can multiply both sides of the inequality by $f(n)$ to find that $k \cdot f(n) + c \le x \cdot f(n)$, or $k \cdot f + c \in O(f)$.
+	\section{Problem 7}
+		\begin{enumerate}
+			\item
+				$$\lim_{n \to \infty} \frac{f(n)}{g(n)} = \infty \iff (\forall c \in \mathbb{R})(\forall n_0 \in \mathbb{N})(\exists n > n_0)\Bigg(\frac{f(n)}{g(n)} > c\Bigg)$$
+				$$\implies (\forall c \in \mathbb{R})(\forall n_0 \in \mathbb{N})(\exists n > n_0)((c > 0 \wedge g(n) > 0) \implies (f(n) > c \cdot g(n))) \implies f \notin O(g)$$
+				In this case, we have:
+				$$\lim_{n \to \infty} \frac{\sqrt{n^5}}{n^2} = \lim_{n \to \infty} \sqrt{n} = \infty$$
+				Therefore, the statement is false.
+			\item
+				If $n > 3$, $\log n^3 = 3 \log n \le n \log n$, so picking $c = 1$ and $n_0 = 3$ shows that the statement is true.
+			\item
+				Suppose that the following holds:
+				$$(\exists c \in \mathbb{R})(c \ge 0 \wedge \lim_{n \to \infty} \frac{f(n)}{g(n)} = c)$$
+				Then, by the definition of a limit, $(\exists n_0 \in \mathbb{N})(n > n_0 \implies \frac{f(n)}{g(n)} \le c + 1)$. For such an $n_0$, $f(n) \le (c + 1) \cdot g(n)$, so $f \in O(g)$.\\
+				Using L'Hopital's Rule, we see that:
+				$$\lim_{n \to \infty} \frac{\sqrt{n} \log \sqrt{n}}{n} = \lim_{n \to \infty} \frac{\log \sqrt{n}}{\sqrt{n}} = \lim_{n \to \infty} \frac{\frac{1}{\sqrt{n}} \cdot \frac{1}{2 \sqrt{n}}}{\frac{1}{2 \sqrt{n}}} = \lim_{n \to \infty} \frac{1}{\sqrt{n}} = 0$$
+				Therefore, the statement is true.
+		\end{enumerate}
+	\section{Problem 8}
+		We have that $(\exists c' \in \mathbb{R})(\exists n_0' \in \mathbb{N})(c' > 0 \wedge (n > n_0' \implies f(n) \le c' \cdot g(n)))$ and $(\exists c'' \in \mathbb{R})(\exists n_0'' \in \mathbb{N})(c'' > 0 \wedge (n > n_0'' \implies g(n) \le c'' \cdot h(n)))$. Now let $n_0 = \max(n_0', n_0'')$ and $c = c'c''$. For $n > n_0$, we see that $f(n) \le c' \cdot g(n) \le c'c'' \cdot h(n) = c \cdot h(n)$, hence $f \in O(h)$.
 \end{document}
