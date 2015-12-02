@@ -1,0 +1,61 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "deque.h"
+
+#define DEFAULT_SIZE 100
+
+struct deque {
+	int *elements;
+	unsigned int start, end;
+};
+/*
+	Stored elements begin at index start and finish at index end,
+	wrapping around if end < start
+*/
+
+Deque *makeEmptyDeque() {
+	Deque *deque = malloc(sizeof(*deque));
+	deque->elements = malloc(sizeof(*(deque->elements)) * DEFAULT_SIZE);
+	deque->start = deque->end = 0;
+	return deque;
+}
+
+bool isEmptyDeque(Deque *deque) {
+	return deque->start == deque->end;
+}
+void pushFront(int element, Deque *deque) {
+	deque->start = (deque->start + DEFAULT_SIZE - 1) % DEFAULT_SIZE;
+	deque->elements[deque->start] = element;
+}
+void pushBack(int element, Deque *deque) {
+	deque->elements[deque->end] = element;
+	deque->end = (deque->end + 1) % DEFAULT_SIZE;
+}
+void errorIfEmpty(Deque *deque) {
+	if (isEmptyDeque(deque)) {
+		fputs("Cannot peek on empty deque\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+}
+int peekFront(Deque *deque) {
+	errorIfEmpty(deque);
+	return deque->elements[deque->start];
+}
+int peekBack(Deque *deque) {
+	errorIfEmpty(deque);
+	return deque->elements[deque->end - 1];
+}
+int popFront(Deque *deque) {
+	const int value = peekFront(deque);
+	deque->start = (deque->start + 1) % DEFAULT_SIZE;
+	return value;
+}
+int popBack(Deque *deque) {
+	const int value = peekBack(deque);
+	deque->end = (deque->end + DEFAULT_SIZE - 1) % DEFAULT_SIZE;
+	return value;
+}
+void freeDeque(Deque *deque) {
+	free(deque->elements);
+	free(deque);
+}
