@@ -67,13 +67,17 @@ int popFront(Deque *deque) {
 	int result = peekFront(deque);
 	if (deque->first->next) deque->first->next->prev = NULL;
 	else deque->last = NULL;
-	deque->first = deque->first->next;
+	Node *toFree = deque->first;
+	deque->first = toFree->next;
+	free(toFree);
 	return result;
 }
 int popBack(Deque *deque) {
 	int result = peekBack(deque);
 	if (deque->last->prev) deque->last->prev->next = NULL;
 	else deque->first = NULL;
-	deque->last = deque->last->prev;
+	Node *toFree = deque->last;
+	deque->last = toFree->prev;
+	free(toFree);
 	return result;
 }
