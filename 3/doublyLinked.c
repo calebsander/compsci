@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -49,11 +50,16 @@ struct node *makeEmptyList() {
 	return list;
 }
 
+bool isEmpty(struct node *node) {
+	return node->next == node;
+}
+
 // Given a pointer to *any node* of a circular doubly linked list,
 // return the list's length.
 int length(struct node *list) {
 	int i;
 	struct node *origNode = list;
+	list = list->next;
 	for (i = 0; list != origNode; i++) list = list->next;
 	return i;
 }
@@ -61,13 +67,15 @@ int length(struct node *list) {
 // Insert a new node with the given (string) value after
 // the given node.
 void insertAfter(struct node *node, char *newValue) {
-
+	struct node *newNode = makeNode(newValue, node->next, node);
+	node->next->prev = newNode;
+	node->next = newNode;
 }
 
 // Insert a new node with the given (string) value before
 // the given node.
 void insertBefore(struct node *node, char *newValue) {
-
+	insertAfter(node->prev, newValue);
 }
 
 // Delete node from the list (and free the space associated with it).
@@ -83,7 +91,24 @@ void deleteNode(struct node *node) {
 // keeping the list sorted correctly. (Values are sorted in
 // ascending lexicographic order, starting at the head.)
 void insertOrdered(struct node *node, char *newValue) {
-
+	if (isEmpty(node)) insertAfter(node, newValue);
+	else {
+		if (!node->value) node = node->next; //if at the head, move to a node in the list
+		int cmp = strcmp(node->value, newValue);
+		if (cmp > 0) { //need to go to the previous ones
+			do {
+				node = node->prev;
+			} while (node->value && strcmp(node->value, newValue) > 0);
+			insertAfter(node, newValue);
+		}
+		else if (cmp < 0) { //need to go to the next ones
+			do {
+				node = node->next;
+			} while (node->value && strcmp(node->value, newValue) < 0);
+			insertBefore(node, newValue);
+		}
+		else insertAfter(node, newValue); //equal; can be inserted here
+	}
 }
 
 // Get pointer to the element occurring n elements after the given node
@@ -95,16 +120,16 @@ void insertOrdered(struct node *node, char *newValue) {
 //   one, we "wrap around.")
 // If start is the head and the list is empty, return NULL.
 struct node *getElement(struct node *start, int index) {
-	if (!start->value) return NULL; //empty list
-	if (!start) index++; //head element, so we need to skip over it
+	if (isEmpty(start)) return NULL; //empty list
+	if (!start->value) index++; //head element, so we need to skip over it
 	for (; index; index--) {
-		if (!start) index++; //head element, so we need to skip over it
 		start = start->next;
+		if (!start->value) index++; //head element, so we need to skip over it
 	}
 	return start;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
 	struct node *l = makeEmptyList();
 	assert(length(l) == 0);
 	assert(getElement(l, 5) == NULL);
