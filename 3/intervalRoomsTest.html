@@ -1,0 +1,130 @@
+<html>
+	<head>
+		<script src = 'jquery.js'></script>
+		<script>
+			const NO_ROOMS = -1;
+			function generateIntervals() {
+				var intervals = [];
+				var newInterval;
+				for (var i = 0; i < 20; i++) {
+					newInterval = [];
+					newInterval[0] = Math.random();
+					newInterval[1] = newInterval[0] + Math.random() * (1 - newInterval[0]);
+					intervals[i] = newInterval;
+				}
+				return intervals;
+			}
+			function overlaps(interval1, interval2) {
+				if (interval1[0] > interval2[0]) return overlaps(interval2, interval1);
+				//interval1 starts before interval 2
+				return interval1[1] > interval2[0];
+			}
+			var intervals = generateIntervals();
+			intervals.sort(function(intervalA, intervalB) {
+				return intervalA[1] - intervalB[1];
+			});
+			var interval, rooms = [], room, maxInsertion, maxRoom, roomInterval, roomOkay;
+			for (interval in intervals) {
+				interval = intervals[interval];
+				maxInsertion = NO_ROOMS;
+				for (room in rooms) {
+					room = rooms[room];
+					roomOkay = true;
+					for (roomInterval in room) {
+						roomInterval = room[roomInterval];
+						if (overlaps(interval, roomInterval)) {
+							roomOkay = false;
+							break;
+						}
+					}
+					if (roomOkay) {
+						roomEnd = room[room.length - 1][1];
+						if (roomEnd > maxInsertion) {
+							maxInsertion = roomEnd;
+							maxRoom = room;
+						}
+					}
+				}
+				if (maxInsertion == NO_ROOMS) rooms.push([interval]);
+				else maxRoom.push(interval);
+			}
+			$(document).ready(function() {
+				var roomDiv;
+				const body = $('body');
+				for (room in rooms) {
+					room = rooms[room];
+					roomDiv = $('<div>').addClass('room');
+					for (interval in room) {
+						interval = room[interval];
+						roomDiv.append($('<div>').addClass('interval').css('left', String(interval[0] * 100) + '%').css('width', String((interval[1] - interval[0]) * 100) + '%').text(String(intervals.indexOf(interval) + 1)));
+					}
+					body.append(roomDiv);
+				}
+				var intervalBound, time, allRoomsAreOccupied, roomIsOccupied, color;
+				for (interval in intervals) {
+					interval = intervals[interval];
+					for (intervalBound in interval) {
+						time = interval[intervalBound];
+						allRoomsAreOccupied = true;
+						for (room in rooms) {
+							room = rooms[room];
+							roomIsOccupied = false;
+							for (roomInterval in room) {
+								roomInterval = room[roomInterval];
+								if (roomInterval[0] <= time && roomInterval[1] >= time) {
+									roomIsOccupied = true;
+									break;
+								}
+							}
+							if (!roomIsOccupied) {
+								allRoomsAreOccupied = false;
+								break;
+							}
+						}
+						if (allRoomsAreOccupied) {
+							if (intervalBound == 0) color = 'green';
+							else color = 'red';
+							body.append($('<div>').addClass('overlap').addClass(color).css('left', String(time * 100) + '%'));
+						}
+					}
+				}
+				if (!$('div.overlap').length) alert('failed');
+			});
+		</script>
+		<style>
+			body {
+				position:absolute;
+				top:0px;
+				left:0px;
+				right:0px;
+				bottom:0px;
+				margin:0px;
+			}
+			div.room {
+				width:100%;
+				height:35px;
+			}
+			div.interval {
+				position:absolute;
+				background:black;
+				height:30px;
+				color:#888;
+				font-family:sans-serif;
+				text-align:center;
+			}
+			div.overlap {
+				position:absolute;
+				top:0px;
+				width:1px;
+				bottom:0px;
+			}
+			div.green {
+				background:#0f0;
+			}
+			div.red {
+				background:#f00;
+			}
+		</style>
+	</head>
+	<body></body>
+</html>
