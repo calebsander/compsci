@@ -87,6 +87,10 @@ int indexOf(int *array, unsigned int start, unsigned int stop, int value) {
 	assert(false);
 	return -1;
 }
+/*Strategy: given a certain segment of the inorder array (representing some subtree's values), look for the element that occurs first in the preorder array
+This element is the root node's value, so split the inorder segment around that element to get the left and right trees
+If there are no elements in the segment preceding this element, it has no left children (and similarly for the right side)
+Call the function recursively on each child segment in the inordered array (using some indices tricks to reduce computation time)*/
 Node *createTreeFromArrays(int *preordered, int *inordered, unsigned int preorderStart, unsigned int preorderStop, unsigned int inorderStart, unsigned int inorderStop) {
 	assert(inorderStart != inorderStop);
 	assert(preorderStart != preorderStop);
