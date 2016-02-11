@@ -46,7 +46,6 @@ void swap(int *elements, unsigned int index1, unsigned int index2) {
 	elements[index2] = temp;
 }
 
-typedef PriorityQueue PriorityQueue;
 PriorityQueue *makeEmptyPriorityQueue() {
 	PriorityQueue *newArray = malloc(sizeof(*newArray));
 	newArray->maxSize = DEFAULT_CAPACITY;

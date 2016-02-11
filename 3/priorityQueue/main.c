@@ -15,7 +15,7 @@ int main() {
 		assert(validOrdering(queue));
 	}
 	assert(queueSize(queue) == QUEUE_ITEMS);
-	printQueue(queue);
+	//printQueue(queue);
 	for (unsigned int i = 0; i < QUEUE_ITEMS; i++) {
 		assert(dequeue(queue) == (19 - i) << 1);
 		assert(queueSize(queue) == QUEUE_ITEMS - 1 - i);
