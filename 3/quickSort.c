@@ -64,4 +64,12 @@ int main() {
 	sort(array, SORT_ITEMS);
 	printArray(array, SORT_ITEMS);
 	assert(isSorted(array, SORT_ITEMS));
+	free(array);
+	int *notIndistinctArray = makeUnsorted();
+	for (unsigned int i = 0; i < SORT_ITEMS; i++) notIndistinctArray[i] /= 2;
+	printArray(notIndistinctArray, SORT_ITEMS);
+	sort(notIndistinctArray, SORT_ITEMS);
+	printArray(notIndistinctArray, SORT_ITEMS);
+	assert(isSorted(notIndistinctArray, SORT_ITEMS));
+	free(notIndistinctArray);
 }
