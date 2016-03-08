@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "queue.h"
 
-#define DEFAULT_SIZE 100
+#define DEFAULT_SIZE 1024
 
 struct queue {
 	Position **elements;
@@ -27,7 +27,7 @@ Queue *makeEmptyQueue() {
 
 void resizeQueue(Queue *queue) {
 	Queue *newQueue = makeEmptyQueueOfSize(queue->allocatedSize << 1);
-	while (!isEmptyQueue(queue)) push(pop(queue), newQueue);
+	while (!isEmpty(queue)) push(newQueue, pop(queue));
 	free(queue->elements);
 	queue->elements = newQueue->elements;
 	queue->start = newQueue->start;
@@ -38,10 +38,10 @@ void resizeQueue(Queue *queue) {
 void addWrap(unsigned int *value, Queue *queue) {
 	*value = (*value + 1) % queue->allocatedSize;
 }
-bool isEmptyQueue(Queue *queue) {
+bool isEmpty(Queue *queue) {
 	return queue->start == queue->end;
 }
-void push(Position *element, Queue *queue) {
+void push(Queue *queue, Position *element) {
 	unsigned int end = queue->end;
 	addWrap(&end, queue);
 	if (end == queue->start) resizeQueue(queue); //queue cannot fit another element
@@ -49,7 +49,7 @@ void push(Position *element, Queue *queue) {
 	addWrap(&(queue->end), queue);
 }
 void errorIfEmpty(Queue *queue) {
-	if (isEmptyQueue(queue)) {
+	if (isEmpty(queue)) {
 		fputs("Cannot peek on empty queue\n", stderr);
 		exit(EXIT_FAILURE);
 	}

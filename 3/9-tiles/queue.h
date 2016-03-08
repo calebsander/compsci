@@ -4,8 +4,8 @@
 typedef struct queue Queue;
 
 Queue *makeEmptyQueue();
-bool isEmptyQueue(Queue *queue);
+bool isEmpty(Queue *queue);
 void freeQueue(Queue *queue);
-void push(Position *element, Queue *queue);
+void push(Queue *queue, Position *element);
 Position *peek(Queue *queue);
 Position *pop(Queue *queue);
