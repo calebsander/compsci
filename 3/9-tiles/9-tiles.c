@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	else {
-		fputs("Invalid argument syntax\n", stderr);
+		fputs("Invalid argument syntax. Use ./Nine [HEIGHT WIDTH] MAXLENGTH INITIAL GOAL\n", stderr);
 		exit(1);
 	}
 	setDimensions((unsigned int)height, (unsigned int)width);
@@ -41,7 +41,21 @@ int main(int argc, char **argv) {
 		fputs("MAXLENGTH must be positive\n", stderr);
 		exit(1);
 	}
-	Position *initial = parsePosition(argv[INITIAL_ARG]), *goal = parsePosition(argv[GOAL_ARG]);
+	char *initialString = argv[INITIAL_ARG];
+	char *goalString = argv[GOAL_ARG];
+	char *goalCopy = strdup(goalString);
+	for (char *initialSearch = initialString; *initialSearch; initialSearch++) {
+		char *goalSearch;
+		for (goalSearch = goalCopy; *goalSearch != *initialSearch; goalSearch++) {
+			if (!*goalSearch) { //reached the end of goalCopy without finding a matching character, so the input was invalid
+				fputs("Characters in initial and goal don't match\n", stderr);
+				exit(1);
+			}
+		}
+		*goalSearch = ' '; //register that this character has been matched
+	}
+	free(goalCopy);
+	Position *initial = parsePosition(initialString), *goal = parsePosition(goalString);
 	Queue *searchQueue = makeEmptyQueue();
 	HashMap *map = makeEmptyMap();
 	push(searchQueue, goal);
@@ -62,7 +76,6 @@ int main(int argc, char **argv) {
 				if (left(possibilities)) newPosition(map, searchQueue, moveLeft(p), p, currentLength);
 				if (down(possibilities)) newPosition(map, searchQueue, moveDown(p), p, currentLength);
 				if (right(possibilities)) newPosition(map, searchQueue, moveRight(p), p, currentLength);
-
 			}
 		}
 	}

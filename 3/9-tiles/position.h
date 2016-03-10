@@ -20,4 +20,5 @@
 	Position *moveRight(Position *position);
 	void freePosition(Position *position);
 	void printPosition(Position *position);
+	char *strdup(char *orig);
 #endif

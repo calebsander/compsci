@@ -30,7 +30,6 @@ Position *parsePosition(char *positionString) {
 			return position;
 		}
 		else {
-			printf("%s\n", positionString);
 			fputs("There must be exactly one '-' in the input string\n", stderr);
 			exit(1);
 		}
@@ -40,13 +39,12 @@ Position *parsePosition(char *positionString) {
 		exit(1);
 	}
 }
+#define PRIME 3141592661L
 unsigned int hashCode(Position *position) {
 	const char *s = position->values;
 	unsigned long sum;
-        const long prime = 3141592661;
-
-        for (sum = 0; *s; s++) sum = (sum << 4) ^ *s;
-        return (unsigned int)(prime * sum);
+	for (sum = 0; *s; s++) sum = (sum << 4) ^ *s;
+	return (unsigned int)(PRIME * sum);
 }
 bool equals(Position *position1, Position *position2) {
 	return !strcmp(position1->values, position2->values);
