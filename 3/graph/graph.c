@@ -1,6 +1,8 @@
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "graph.h"
+#include "deque.h"
 
 struct graph {
 	VertexHashSet *vertices;
@@ -71,13 +73,6 @@ void deleteVertex(Graph *graph, Vertex *vertex) { //takes care of freeing the ve
 	free(neighbors);
 	freeVertex(vertex);
 }
-void freeGraph(Graph *graph) {
-	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
-	while (hasNextVertex(vertices)) deleteVertex(graph, nextVertex(vertices));
-	free(vertices);
-	freeSetVertex(graph->vertices);
-	free(graph);
-}
 void printGraph(Graph *graph) {
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
 	printf("Vertices: ");
@@ -93,31 +88,31 @@ void printGraph(Graph *graph) {
 	free(edgeIterator);
 	freeSetEdge(edgeSet);
 }
-/*int main() {
-	Graph *graph = makeGraph();
-	Vertex *a = addVertex(graph, 'a');
-	Vertex *b = addVertex(graph, 'b');
-	Vertex *c = addVertex(graph, 'c');
-	Vertex *d = addVertex(graph, 'd');
-	Vertex *e = addVertex(graph, 'e');
-	printGraph(graph); //a b c d e
-	deleteVertex(graph, c);
-	printGraph(graph); //a b d e
-	Edge *edge1 = addEdge(graph, a, b);
-	Edge *edge2 = addEdge(graph, d, b);
-	Edge *edge4 = addEdge(graph, e, d);
-	Edge *edge5 = addEdge(graph, d, a);
-	free(edge2); free(edge4); free(edge5);
-	printGraph(graph); //a <-> b, b <-> d, d <-> e, a <-> d
-	putchar('\n');
-	VertexSetIterator *adjacent = iteratorVertex(neighbors(graph, d));
-	while (hasNextVertex(adjacent)) printf("%c ", nextVertex(adjacent)->data); //a b e
-	free(adjacent);
-	puts("\n");
-	deleteEdge(graph, edge1);
-	printGraph(graph); //b <-> d, d <-> e, a <-> d
-	deleteVertex(graph, e);
-	deleteVertex(graph, b);
-	printGraph(graph); //a <-> d
-	freeGraph(graph);
-}*/
+void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *)) {
+	VertexHashSet *visited = makeEmptySetVertex();
+	addElementVertex(visited, start);
+	Deque *stack = makeEmptyDeque();
+	pushFront(start, stack);
+	while (!isEmptyDeque(stack)) { //while some connected vertices haven't yet been looked at
+		Vertex *current = popFront(stack); //look at the current vertex
+		(*visit)(current);
+		VertexHashSet *adjacent = neighbors(graph, current);
+		VertexSetIterator *neighborIterator = iteratorVertex(adjacent);
+		while (hasNextVertex(neighborIterator)) { //add any unadded neighbors to the queue
+			Vertex *next = nextVertex(neighborIterator);
+			if (!containsVertex(visited, next)) {
+				addElementVertex(visited, next);
+				pushFront(next, stack);
+			}
+		}
+	}
+	freeSetVertex(visited);
+	freeDeque(stack);
+}
+void freeGraph(Graph *graph) {
+	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
+	while (hasNextVertex(vertices)) deleteVertex(graph, nextVertex(vertices));
+	free(vertices);
+	freeSetVertex(graph->vertices);
+	free(graph);
+}

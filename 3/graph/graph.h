@@ -13,5 +13,7 @@
 	Vertex *addVertex(Graph *graph, VertexData data);
 	void deleteEdge(Graph *graph, Edge *edge);
 	void deleteVertex(Graph *graph, Vertex *vertex);
+	void printGraph(Graph *graph);
+	void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *));
 	void freeGraph(Graph *graph);
 #endif
