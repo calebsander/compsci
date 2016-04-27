@@ -5,12 +5,14 @@
 	typedef struct vertexHashSet VertexHashSet;
 	typedef struct {
 		VertexData data;
+		int distanceFromStart;
 		VertexHashSet *adjacent;
 	} Vertex;
 
 	VertexHashSet *makeEmptySetVertex();
 	bool containsVertex(VertexHashSet *set, Vertex *value);
-	void addElementVertex(VertexHashSet *set, Vertex *value);
+	int weightToVertex(VertexHashSet *set, Vertex *vertex);
+	void addElementVertex(VertexHashSet *set, Vertex *value, int weight);
 	void removeElementVertex(VertexHashSet *set, Vertex *value);
 	void freeSetVertex(VertexHashSet *set);
 	typedef struct vertexSetIterator VertexSetIterator;

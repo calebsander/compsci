@@ -3,6 +3,7 @@
 	#include "vertex.h"
 	typedef struct {
 		Vertex *vertex1, *vertex2;
+		int weight;
 	} Edge;
 	typedef struct edgeHashSet EdgeHashSet;
 

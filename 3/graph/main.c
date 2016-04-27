@@ -6,6 +6,9 @@ void print(Vertex *vertex) {
 	putchar(vertex->data);
 	putchar('\n');
 }
+void edge(Graph *g, Vertex *v1, Vertex *v2, int w) {
+	free(addEdge(g, v1, v2, w));
+}
 int main() {
 	Graph *graph = makeGraph();
 	Vertex *a = addVertex(graph, 'a');
@@ -15,19 +18,16 @@ int main() {
 	Vertex *e = addVertex(graph, 'e');
 	Vertex *f = addVertex(graph, 'f');
 	Vertex *g = addVertex(graph, 'g');
-	Vertex *h = addVertex(graph, 'h');
-	Vertex *i = addVertex(graph, 'i');
-	Vertex *j = addVertex(graph, 'j');
-	free(addEdge(graph, a, b));
-	free(addEdge(graph, a, e));
-	free(addEdge(graph, b, c));
-	free(addEdge(graph, b, d));
-	free(addEdge(graph, c, d));
-	free(addEdge(graph, c, e));
-	free(addEdge(graph, e, f));
-	free(addEdge(graph, f, g));
-	free(addEdge(graph, g, h));
-	free(addEdge(graph, i, j));
-	traverseDepthFirst(graph, e, &print);
+	edge(graph, a, b, 1);
+	edge(graph, a, c, 2);
+	edge(graph, a, d, 1);
+	edge(graph, b, c, 3);
+	edge(graph, c, d, 2);
+	edge(graph, c, e, 4);
+	edge(graph, c, f, 10);
+	edge(graph, e, f, 3);
+	printGraph(graph);
+	printf("%d\n", shortestPath(graph, a, f));
+	printGraph(graph);
 	freeGraph(graph);
 }

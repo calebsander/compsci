@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,7 +6,7 @@
 #include "deque.h"
 
 struct graph {
-	VertexHashSet *vertices;
+	VertexHashSet *vertices; //used as just a set rather than a map of vertices to weights
 };
 
 Graph *makeGraph() {
@@ -17,10 +18,11 @@ Graph *makeGraph() {
 VertexHashSet *vertices(Graph *graph) {
 	return graph->vertices;
 }
-Edge *makeEdge(Vertex *vertex1, Vertex *vertex2) {
+Edge *makeEdge(Vertex *vertex1, Vertex *vertex2, int weight) {
 	Edge *edge = malloc(sizeof(*edge));
 	edge->vertex1 = vertex1;
 	edge->vertex2 = vertex2;
+	edge->weight = weight;
 	return edge;
 }
 EdgeHashSet *edges(Graph *graph) {
@@ -31,7 +33,7 @@ EdgeHashSet *edges(Graph *graph) {
 		VertexSetIterator *neighbors = iteratorVertex(vertex->adjacent);
 		while (hasNextVertex(neighbors)) {
 			Vertex *neighbor = nextVertex(neighbors);
-			if (vertex < neighbor) addElementEdge(edgeSet, makeEdge(vertex, neighbor)); //guarantee that each edge is only printed once
+			if (vertex < neighbor) addElementEdge(edgeSet, makeEdge(vertex, neighbor, weightToVertex(vertex->adjacent, neighbor))); //guarantee that each edge is only printed once
 		}
 		free(neighbors);
 	}
@@ -42,19 +44,20 @@ VertexHashSet *neighbors(Graph *graph, Vertex *vertex) {
 	return vertex->adjacent;
 }
 
-Edge *addEdge(Graph *graph, Vertex *vertex1, Vertex *vertex2) { //the returned edge is newly malloc'd and must be freed when doen being used
+Edge *addEdge(Graph *graph, Vertex *vertex1, Vertex *vertex2, int weight) { //the returned edge is newly malloc'd and must be freed when doen being used
 	if (vertex1 == vertex2) return NULL; //can't have a vertex connected to itself
 	else {
-		addElementVertex(vertex1->adjacent, vertex2);
-		addElementVertex(vertex2->adjacent, vertex1);
-		return makeEdge(vertex1, vertex2);
+		addElementVertex(vertex1->adjacent, vertex2, weight);
+		addElementVertex(vertex2->adjacent, vertex1, weight);
+		return makeEdge(vertex1, vertex2, weight);
 	}
 }
 Vertex *addVertex(Graph *graph, VertexData data) { //the returned vertex is part of the graph, so it should NOT be freed
 	Vertex *vertex = malloc(sizeof(*vertex));
 	vertex->data = data;
 	vertex->adjacent = makeEmptySetVertex();
-	addElementVertex(graph->vertices, vertex);
+	vertex->distanceFromStart = -1;
+	addElementVertex(graph->vertices, vertex, 0);
 	return vertex;
 }
 void deleteEdge(Graph *graph, Edge *edge) { //will free the edge passed in
@@ -75,10 +78,12 @@ void deleteVertex(Graph *graph, Vertex *vertex) { //takes care of freeing the ve
 }
 void printGraph(Graph *graph) {
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
-	printf("Vertices: ");
-	while (hasNextVertex(vertices)) printf("%c ", nextVertex(vertices)->data);
+	printf("Vertices:\n");
+	while (hasNextVertex(vertices)) {
+		Vertex *vertex = nextVertex(vertices);
+		printf("%c - %d\n", vertex->data, vertex->distanceFromStart);
+	}
 	free(vertices);
-	putchar('\n');
 	EdgeHashSet *edgeSet = edges(graph);
 	EdgeSetIterator *edgeIterator = iteratorEdge(edgeSet);
 	while (hasNextEdge(edgeIterator)) {
@@ -89,8 +94,8 @@ void printGraph(Graph *graph) {
 	freeSetEdge(edgeSet);
 }
 void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *)) {
-	VertexHashSet *visited = makeEmptySetVertex();
-	addElementVertex(visited, start);
+	VertexHashSet *visited = makeEmptySetVertex(); //used as just a set rather than a map of vertices to weights
+	addElementVertex(visited, start, 0);
 	Deque *stack = makeEmptyDeque();
 	pushFront(start, stack);
 	while (!isEmptyDeque(stack)) { //while some connected vertices haven't yet been looked at
@@ -101,13 +106,50 @@ void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *)) {
 		while (hasNextVertex(neighborIterator)) { //add any unadded neighbors to the queue
 			Vertex *next = nextVertex(neighborIterator);
 			if (!containsVertex(visited, next)) {
-				addElementVertex(visited, next);
+				addElementVertex(visited, next, 0);
 				pushFront(next, stack);
 			}
 		}
 	}
 	freeSetVertex(visited);
 	freeDeque(stack);
+}
+bool labelNextVertex(Graph *graph) { //returns whether it filled one in
+	Vertex *minVertex = NULL;
+	int minDistance = INT_MAX;
+	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
+	while (hasNextVertex(vertices)) {
+		Vertex *hostVertex = nextVertex(vertices);
+		const int distanceToHost = hostVertex->distanceFromStart;
+		if (distanceToHost != -1) { //if hostVertex is in the calculated set
+			VertexSetIterator *neighbors = iteratorVertex(hostVertex->adjacent);
+			while (hasNextVertex(neighbors)) { //look at uncalculated neighbors
+				Vertex *neighbor = nextVertex(neighbors);
+				const int nextDistance = weightToVertex(hostVertex->adjacent, neighbor);
+				if (neighbor->distanceFromStart == -1) {
+					const int totalDistance = distanceToHost + nextDistance;
+					if (totalDistance < minDistance) {
+						minVertex = neighbor;
+						minDistance = totalDistance;
+					}
+				}
+			}
+			free(neighbors);
+		}
+	}
+	free(vertices);
+	if (minVertex) {
+		minVertex->distanceFromStart = minDistance;
+		return true;
+	}
+	else return false;
+}
+int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
+	start->distanceFromStart = 0;
+	while (labelNextVertex(graph)) {
+		if (end->distanceFromStart != -1) return end->distanceFromStart;
+	}
+	return -1;
 }
 void freeGraph(Graph *graph) {
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);

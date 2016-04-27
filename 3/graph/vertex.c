@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include "vertex.h"
 
@@ -6,6 +7,7 @@
 typedef struct bucketNode BucketNode;
 struct bucketNode {
 	Vertex *value;
+	int weight;
 	BucketNode *next;
 };
 struct vertexHashSet {
@@ -17,7 +19,7 @@ struct vertexHashSet {
 unsigned int hashVertex(Vertex *value, unsigned int bucketCount) {
 	return (unsigned int)(long)value % bucketCount;
 }
-void addElementResizeVertex(VertexHashSet *set, Vertex *value, bool external);
+void addElementResizeVertex(VertexHashSet *set, Vertex *value, int weight, bool external);
 void allocateBucketsVertex(VertexHashSet *set, unsigned int count) {
 	const unsigned int oldCount = set->bucketCount;
 	BucketNode **oldBuckets = set->buckets;
@@ -27,7 +29,7 @@ void allocateBucketsVertex(VertexHashSet *set, unsigned int count) {
 		for (unsigned int oldBucket = 0; oldBucket < oldCount; oldBucket++) {
 			BucketNode *node = oldBuckets[oldBucket];
 			while (node) {
-				addElementResizeVertex(set, node->value, false);
+				addElementResizeVertex(set, node->value, node->weight, false);
 				BucketNode *lastNode = node;
 				node = node->next;
 				free(lastNode);
@@ -36,9 +38,10 @@ void allocateBucketsVertex(VertexHashSet *set, unsigned int count) {
 		free(oldBuckets);
 	}
 }
-BucketNode *makeNodeVertex(Vertex *value, BucketNode *next) {
+BucketNode *makeNodeVertex(Vertex *value, int weight, BucketNode *next) {
 	BucketNode *node = malloc(sizeof(*node));
 	node->value = value;
+	node->weight = weight;
 	node->next = next;
 	return node;
 }
@@ -57,10 +60,17 @@ bool containsVertex(VertexHashSet *set, Vertex *value) {
 	}
 	return false;
 }
-void addElementVertex(VertexHashSet *set, Vertex *value) {
-	addElementResizeVertex(set, value, true);
+int weightToVertex(VertexHashSet *set, Vertex *vertex) {
+	for (BucketNode *node = set->buckets[hashVertex(vertex, set->bucketCount)]; node; node = node->next) {
+		if (node->value == vertex) return node->weight;
+	}
+	assert(false);
+	return 0;
 }
-void addElementResizeVertex(VertexHashSet *set, Vertex *value, bool external) {
+void addElementVertex(VertexHashSet *set, Vertex *value, int weight) {
+	addElementResizeVertex(set, value, weight, true);
+}
+void addElementResizeVertex(VertexHashSet *set, Vertex *value, int weight, bool external) {
 	if (external && set->elementCount + 1 > (int)((double)set->bucketCount * LOAD_FACTOR)) allocateBucketsVertex(set, set->bucketCount << 1); //there is a possibility of exceeding the load factor
 	BucketNode **node = set->buckets + hashVertex(value, set->bucketCount);
 	while (*node) {
@@ -68,7 +78,7 @@ void addElementResizeVertex(VertexHashSet *set, Vertex *value, bool external) {
 		node = &((*node)->next);
 	}
 	if (external) set->elementCount++;
-	*node = makeNodeVertex(value, *node);
+	*node = makeNodeVertex(value, weight, *node);
 }
 void removeElementVertex(VertexHashSet *set, Vertex *value) {
 	BucketNode **node = set->buckets + hashVertex(value, set->bucketCount);
