@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "graph.h"
 #include "deque.h"
+#include "priorityQueue.h"
 
 struct graph {
 	VertexHashSet *vertices; //used as just a set rather than a map of vertices to weights
@@ -88,7 +89,7 @@ void printGraph(Graph *graph) {
 	EdgeSetIterator *edgeIterator = iteratorEdge(edgeSet);
 	while (hasNextEdge(edgeIterator)) {
 		const Edge *edge = nextEdge(edgeIterator);
-		printf("%c <-> %c\n", edge->vertex1->data, edge->vertex2->data);
+		printf("%c <-%d-> %c\n", edge->vertex1->data, weightToVertex(edge->vertex1->adjacent, edge->vertex2), edge->vertex2->data);
 	}
 	free(edgeIterator);
 	freeSetEdge(edgeSet);
@@ -114,41 +115,35 @@ void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *)) {
 	freeSetVertex(visited);
 	freeDeque(stack);
 }
-bool labelNextVertex(Graph *graph) { //returns whether it filled one in
-	Vertex *minVertex = NULL;
-	int minDistance = INT_MAX;
-	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
-	while (hasNextVertex(vertices)) {
-		Vertex *hostVertex = nextVertex(vertices);
-		const int distanceToHost = hostVertex->distanceFromStart;
-		if (distanceToHost != -1) { //if hostVertex is in the calculated set
-			VertexSetIterator *neighbors = iteratorVertex(hostVertex->adjacent);
-			while (hasNextVertex(neighbors)) { //look at uncalculated neighbors
-				Vertex *neighbor = nextVertex(neighbors);
-				const int nextDistance = weightToVertex(hostVertex->adjacent, neighbor);
-				if (neighbor->distanceFromStart == -1) {
-					const int totalDistance = distanceToHost + nextDistance;
-					if (totalDistance < minDistance) {
-						minVertex = neighbor;
-						minDistance = totalDistance;
-					}
-				}
-			}
-			free(neighbors);
+void label(Vertex *vertex, int distance, PriorityQueue *queue) {
+	vertex->distanceFromStart = distance;
+	VertexSetIterator *neighbors = iteratorVertex(vertex->adjacent);
+	while (hasNextVertex(neighbors)) {
+		Vertex *next = nextVertex(neighbors);
+		if (next->distanceFromStart == -1) { //it is possible distance will still be calculated from some other path, but do this as a first precaution
+			enqueue(queue, makeVertexDistance(next, distance + weightToVertex(vertex->adjacent, next)));
 		}
 	}
-	free(vertices);
-	if (minVertex) {
-		minVertex->distanceFromStart = minDistance;
-		return true;
-	}
-	else return false;
+	free(neighbors);
 }
 int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
-	start->distanceFromStart = 0;
-	while (labelNextVertex(graph)) {
-		if (end->distanceFromStart != -1) return end->distanceFromStart;
+	if (start == end) return 0; //needs to be handled separately
+	PriorityQueue *queue = makeEmptyPriorityQueue();
+	label(start, 0, queue);
+	while (!isEmptyQueue(queue)) {
+		VertexDistance *next = dequeue(queue);
+		Vertex *vertex = getVertex(next);
+		if (vertex == end) {
+			int distance = getDistance(next);
+			free(next);
+			while (!isEmptyQueue(queue)) free(dequeue(queue));
+			freePriorityQueue(queue);
+			return distance;
+		}
+		if (vertex->distanceFromStart == -1) label(vertex, getDistance(next), queue);
+		free(next);
 	}
+	freePriorityQueue(queue);
 	return -1;
 }
 void freeGraph(Graph *graph) {
