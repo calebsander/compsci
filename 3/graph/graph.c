@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include "graph.h"
 #include "deque.h"
-#include "priorityQueue.h"
 
 struct graph {
 	VertexHashSet *vertices; //used as just a set rather than a map of vertices to weights
