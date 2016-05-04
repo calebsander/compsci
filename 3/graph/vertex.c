@@ -93,6 +93,9 @@ void removeElementVertex(VertexHashSet *set, Vertex *value) {
 		node = &((*node)->next);
 	}
 }
+unsigned int size(VertexHashSet *set) {
+	return set->elementCount;
+}
 void freeSetVertex(VertexHashSet *set) {
 	for (unsigned int bucket = 0; bucket < set->bucketCount; bucket++) {
 		BucketNode *node = set->buckets[bucket];

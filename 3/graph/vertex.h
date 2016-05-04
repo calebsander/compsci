@@ -5,7 +5,6 @@
 	typedef struct vertexHashSet VertexHashSet;
 	typedef struct {
 		VertexData data;
-		int distanceFromStart;
 		VertexHashSet *adjacent;
 	} Vertex;
 
@@ -14,6 +13,7 @@
 	int weightToVertex(VertexHashSet *set, Vertex *vertex);
 	void addElementVertex(VertexHashSet *set, Vertex *value, int weight);
 	void removeElementVertex(VertexHashSet *set, Vertex *value);
+	unsigned int size(VertexHashSet *set);
 	void freeSetVertex(VertexHashSet *set);
 	typedef struct vertexSetIterator VertexSetIterator;
 	VertexSetIterator *iteratorVertex(VertexHashSet *set);

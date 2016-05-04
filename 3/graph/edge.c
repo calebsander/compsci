@@ -15,7 +15,10 @@ struct edgeHashSet {
 };
 
 unsigned int hashEdge(Edge *value, unsigned int bucketCount) {
-	return (unsigned int)(long)value % bucketCount;
+	return ((unsigned int)(long)value->vertex1 + (unsigned int)(long)value->vertex2 + value->weight) % bucketCount;
+}
+bool equals(Edge *edge1, Edge *edge2) {
+	return edge1->vertex1 == edge2->vertex1 && edge1->vertex2 == edge2->vertex2 && edge1->weight == edge2->weight;
 }
 void addElementResizeEdge(EdgeHashSet *set, Edge *value, bool external);
 void allocateBucketsEdge(EdgeHashSet *set, unsigned int count) {
@@ -53,7 +56,7 @@ EdgeHashSet *makeEmptySetEdge() {
 
 bool containsEdge(EdgeHashSet *set, Edge *value) {
 	for (BucketNode *node = set->buckets[hashEdge(value, set->bucketCount)]; node; node = node->next) {
-		if (node->value == value) return true;
+		if (equals(node->value, value)) return true;
 	}
 	return false;
 }
@@ -64,7 +67,7 @@ void addElementResizeEdge(EdgeHashSet *set, Edge *value, bool external) {
 	if (external && set->elementCount + 1 > (int)((double)set->bucketCount * LOAD_FACTOR)) allocateBucketsEdge(set, set->bucketCount << 1); //there is a possibility of exceeding the load factor
 	BucketNode **node = set->buckets + hashEdge(value, set->bucketCount);
 	while (*node) {
-		if ((*node)->value == value) return; //value already exists
+		if (equals((*node)->value, value)) return; //value already exists
 		node = &((*node)->next);
 	}
 	if (external) set->elementCount++;
@@ -73,7 +76,7 @@ void addElementResizeEdge(EdgeHashSet *set, Edge *value, bool external) {
 void removeElementEdge(EdgeHashSet *set, Edge *value) {
 	BucketNode **node = set->buckets + hashEdge(value, set->bucketCount);
 	while (*node) {
-		if ((*node)->value == value) {
+		if (equals((*node)->value, value)) {
 			BucketNode *removeNode = *node;
 			*node = (*node)->next;
 			free(removeNode);

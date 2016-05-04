@@ -34,7 +34,7 @@ EdgeHashSet *edges(Graph *graph) {
 		VertexSetIterator *neighbors = iteratorVertex(vertex->adjacent);
 		while (hasNextVertex(neighbors)) {
 			Vertex *neighbor = nextVertex(neighbors);
-			if (vertex < neighbor) addElementEdge(edgeSet, makeEdge(vertex, neighbor, weightToVertex(vertex->adjacent, neighbor))); //guarantee that each edge is only printed once
+			addElementEdge(edgeSet, makeEdge(vertex, neighbor, weightToVertex(vertex->adjacent, neighbor))); //guarantee that each edge is only printed once
 		}
 		free(neighbors);
 	}
@@ -45,11 +45,10 @@ VertexHashSet *neighbors(Graph *graph, Vertex *vertex) {
 	return vertex->adjacent;
 }
 
-Edge *addEdge(Graph *graph, Vertex *vertex1, Vertex *vertex2, int weight) { //the returned edge is newly malloc'd and must be freed when doen being used
+Edge *addEdge(Graph *graph, Vertex *vertex1, Vertex *vertex2, int weight) { //the returned edge is newly malloc'd and must be freed when done being used
 	if (vertex1 == vertex2) return NULL; //can't have a vertex connected to itself
 	else {
 		addElementVertex(vertex1->adjacent, vertex2, weight);
-		addElementVertex(vertex2->adjacent, vertex1, weight);
 		return makeEdge(vertex1, vertex2, weight);
 	}
 }
@@ -57,7 +56,6 @@ Vertex *addVertex(Graph *graph, VertexData data) { //the returned vertex is part
 	Vertex *vertex = malloc(sizeof(*vertex));
 	vertex->data = data;
 	vertex->adjacent = makeEmptySetVertex();
-	vertex->distanceFromStart = -1;
 	addElementVertex(graph->vertices, vertex, 0);
 	return vertex;
 }
@@ -72,24 +70,25 @@ void freeVertex(Vertex *vertex) {
 }
 void deleteVertex(Graph *graph, Vertex *vertex) { //takes care of freeing the vertex as it is no longer needed
 	removeElementVertex(graph->vertices, vertex);
-	VertexSetIterator *neighbors = iteratorVertex(vertex->adjacent);
-	while (hasNextVertex(neighbors)) removeElementVertex(nextVertex(neighbors)->adjacent, vertex);
-	free(neighbors);
+	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
+	while (hasNextVertex(vertices)) removeElementVertex(nextVertex(vertices)->adjacent, vertex);
+	free(vertices);
 	freeVertex(vertex);
 }
 void printGraph(Graph *graph) {
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
-	printf("Vertices:\n");
+	puts("Vertices:");
 	while (hasNextVertex(vertices)) {
 		Vertex *vertex = nextVertex(vertices);
-		printf("%c - %d\n", vertex->data, vertex->distanceFromStart);
+		printf("%c\n", vertex->data);
 	}
 	free(vertices);
+	puts("Edges:");
 	EdgeHashSet *edgeSet = edges(graph);
 	EdgeSetIterator *edgeIterator = iteratorEdge(edgeSet);
 	while (hasNextEdge(edgeIterator)) {
 		const Edge *edge = nextEdge(edgeIterator);
-		printf("%c <-%d-> %c\n", edge->vertex1->data, weightToVertex(edge->vertex1->adjacent, edge->vertex2), edge->vertex2->data);
+		printf("%c -- %d -> %c\n", edge->vertex1->data, weightToVertex(edge->vertex1->adjacent, edge->vertex2), edge->vertex2->data);
 	}
 	free(edgeIterator);
 	freeSetEdge(edgeSet);
@@ -115,36 +114,42 @@ void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *)) {
 	freeSetVertex(visited);
 	freeDeque(stack);
 }
-void label(Vertex *vertex, int distance, PriorityQueue *queue) {
-	vertex->distanceFromStart = distance;
-	VertexSetIterator *neighbors = iteratorVertex(vertex->adjacent);
-	while (hasNextVertex(neighbors)) {
-		Vertex *next = nextVertex(neighbors);
-		if (next->distanceFromStart == -1) { //it is possible distance will still be calculated from some other path, but do this as a first precaution
-			enqueue(queue, makeVertexDistance(next, distance + weightToVertex(vertex->adjacent, next)));
-		}
-	}
-	free(neighbors);
-}
 int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
-	if (start == end) return 0; //needs to be handled separately
-	PriorityQueue *queue = makeEmptyPriorityQueue();
-	label(start, 0, queue);
-	while (!isEmptyQueue(queue)) {
-		VertexDistance *next = dequeue(queue);
-		Vertex *vertex = getVertex(next);
-		if (vertex == end) {
-			int distance = getDistance(next);
-			free(next);
-			while (!isEmptyQueue(queue)) free(dequeue(queue));
-			freePriorityQueue(queue);
-			return distance;
-		}
-		if (vertex->distanceFromStart == -1) label(vertex, getDistance(next), queue);
-		free(next);
+	unsigned int vertexCount = size(graph->vertices);
+	VertexHashSet *shortest = makeEmptySetVertex(); //stores the current shortest path to each vertex
+	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
+	for (unsigned int i = 0; hasNextVertex(vertices); i++) {
+		Vertex *vertex = nextVertex(vertices);
+		if (vertex == start) addElementVertex(shortest, vertex, 0);
+		else addElementVertex(shortest, vertex, INT_MAX);
 	}
-	freePriorityQueue(queue);
-	return -1;
+	free(vertices);
+	for (unsigned int i = 1; i != vertexCount; i++) {
+		VertexSetIterator *vertices = iteratorVertex(graph->vertices);
+		while (hasNextVertex(vertices)) {
+			Vertex *examinedVertex = nextVertex(vertices);
+			VertexSetIterator *possiblyAdjacent = iteratorVertex(graph->vertices);
+			while (hasNextVertex(possiblyAdjacent)) {
+				Vertex *adjacentCandidate = nextVertex(possiblyAdjacent);
+				if (containsVertex(adjacentCandidate->adjacent, examinedVertex)) {
+					const int otherDistance = weightToVertex(shortest, adjacentCandidate);
+					if (otherDistance != INT_MAX) {
+						const int currentWeight = weightToVertex(shortest, examinedVertex);
+						const int newWeight = otherDistance + weightToVertex(adjacentCandidate->adjacent, examinedVertex);
+						if (newWeight < currentWeight) {
+							removeElementVertex(shortest, examinedVertex);
+							addElementVertex(shortest, examinedVertex, newWeight);
+						}
+					}
+				}
+			}
+			free(possiblyAdjacent);
+		}
+		free(vertices);
+	}
+	const int result = weightToVertex(shortest, end);
+	freeSetVertex(shortest);
+	return result;
 }
 void freeGraph(Graph *graph) {
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
