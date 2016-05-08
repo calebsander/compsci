@@ -87,7 +87,7 @@ void printGraph(Graph *graph) {
 	EdgeSetIterator *edgeIterator = iteratorEdge(edgeSet);
 	while (hasNextEdge(edgeIterator)) {
 		const Edge *edge = nextEdge(edgeIterator);
-		printf("%c -- %d -> %c\n", edge->vertex1->data, weightToVertex(edge->vertex1->adjacent, edge->vertex2), edge->vertex2->data);
+		printf("%c -(%d)-> %c\n", edge->vertex1->data, weightToVertex(edge->vertex1->adjacent, edge->vertex2), edge->vertex2->data);
 	}
 	free(edgeIterator);
 	freeSetEdge(edgeSet);
@@ -114,6 +114,7 @@ void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *)) {
 	freeDeque(stack);
 }
 int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
+	start->decoration = NULL;
 	unsigned int vertexCount = size(graph->vertices);
 	VertexHashSet *shortest = makeEmptySetVertex(); //stores the current shortest path to each vertex
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
@@ -138,6 +139,7 @@ int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
 						if (newWeight < currentWeight) {
 							removeElementVertex(shortest, examinedVertex);
 							addElementVertex(shortest, examinedVertex, newWeight);
+							examinedVertex->decoration = adjacentCandidate;
 						}
 					}
 				}
@@ -148,7 +150,22 @@ int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
 	}
 	const int result = weightToVertex(shortest, end);
 	freeSetVertex(shortest);
-	return result;
+	if (result == INT_MAX) return -1;
+	else {
+		Vertex *pathVertex = end;
+		Vertex *next = end->decoration, *next2;
+		end->decoration = NULL;
+		while (pathVertex) { //reverse the direction of the path pointers (to be start -> end)
+			if (next) {
+				next2 = next->decoration;
+				next->decoration = pathVertex;
+			}
+			pathVertex = next;
+			next = next2;
+		}
+		for (pathVertex = start; pathVertex; pathVertex = pathVertex->decoration) printf("%c\n", pathVertex->data);
+		return result;
+	}
 }
 void freeGraph(Graph *graph) {
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
