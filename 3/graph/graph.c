@@ -74,12 +74,15 @@ void deleteVertex(Graph *graph, Vertex *vertex) { //takes care of freeing the ve
 	free(vertices);
 	freeVertex(vertex);
 }
+void printVertex(Vertex *vertex) {
+	printf("%c\n", vertex->data);
+}
 void printGraph(Graph *graph) {
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
 	puts("Vertices:");
 	while (hasNextVertex(vertices)) {
 		Vertex *vertex = nextVertex(vertices);
-		printf("%c\n", vertex->data);
+		printVertex(vertex);
 	}
 	free(vertices);
 	puts("Edges:");
@@ -114,32 +117,32 @@ void traverseDepthFirst(Graph *graph, Vertex *start, void (*visit)(Vertex *)) {
 	freeDeque(stack);
 }
 int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
-	start->decoration = NULL;
-	unsigned int vertexCount = size(graph->vertices);
+	//Store the shortest distances found from start to vertices (or INT_MAX if none exists)
 	VertexHashSet *shortest = makeEmptySetVertex(); //stores the current shortest path to each vertex
 	VertexSetIterator *vertices = iteratorVertex(graph->vertices);
-	for (unsigned int i = 0; hasNextVertex(vertices); i++) {
+	while (hasNextVertex(vertices)) {
 		Vertex *vertex = nextVertex(vertices);
-		if (vertex == start) addElementVertex(shortest, vertex, 0);
+		if (vertex == start) addElementVertex(shortest, vertex, 0); //only known one
 		else addElementVertex(shortest, vertex, INT_MAX);
 	}
 	free(vertices);
-	for (unsigned int i = 1; i != vertexCount; i++) {
+	//Calculate shortest distances
+	unsigned int vertexCount = size(graph->vertices);
+	for (unsigned int i = 1; i != vertexCount; i++) { //if no negative loops exist, longest possible paths traverses V-1 vertices
 		VertexSetIterator *vertices = iteratorVertex(graph->vertices);
 		while (hasNextVertex(vertices)) {
 			Vertex *examinedVertex = nextVertex(vertices);
 			VertexSetIterator *possiblyAdjacent = iteratorVertex(graph->vertices);
 			while (hasNextVertex(possiblyAdjacent)) {
 				Vertex *adjacentCandidate = nextVertex(possiblyAdjacent);
-				if (containsVertex(adjacentCandidate->adjacent, examinedVertex)) {
+				if (containsVertex(adjacentCandidate->adjacent, examinedVertex)) { //look for a vertex that can reach this one
 					const int otherDistance = weightToVertex(shortest, adjacentCandidate);
-					if (otherDistance != INT_MAX) {
-						const int currentWeight = weightToVertex(shortest, examinedVertex);
-						const int newWeight = otherDistance + weightToVertex(adjacentCandidate->adjacent, examinedVertex);
-						if (newWeight < currentWeight) {
+					if (otherDistance != INT_MAX) { //make sure the other vertex has been reached from start
+						const int currentWeight = weightToVertex(shortest, examinedVertex); //old shortest path
+						const int newWeight = otherDistance + weightToVertex(adjacentCandidate->adjacent, examinedVertex); //new shortest path
+						if (newWeight < currentWeight) { //update shortest value in the set
 							removeElementVertex(shortest, examinedVertex);
 							addElementVertex(shortest, examinedVertex, newWeight);
-							examinedVertex->decoration = adjacentCandidate;
 						}
 					}
 				}
@@ -148,22 +151,36 @@ int shortestPath(Graph *graph, Vertex *start, Vertex *end) {
 		}
 		free(vertices);
 	}
+	//Find path from resulting distances
 	const int result = weightToVertex(shortest, end);
-	freeSetVertex(shortest);
-	if (result == INT_MAX) return -1;
+	if (result == INT_MAX) { //could not get to end
+		freeSetVertex(shortest);
+		return -1;
+	}
 	else {
 		Vertex *pathVertex = end;
-		Vertex *next = end->decoration, *next2;
-		end->decoration = NULL;
-		while (pathVertex) { //reverse the direction of the path pointers (to be start -> end)
-			if (next) {
-				next2 = next->decoration;
-				next->decoration = pathVertex;
+		Deque *visitedStack = makeEmptyDeque();
+		while (pathVertex != start) { //go backward from end to start
+			pushFront(pathVertex, visitedStack);
+			const int minDistance = weightToVertex(shortest, pathVertex);
+			VertexSetIterator *possiblyAdjacent = iteratorVertex(graph->vertices);
+			while (hasNextVertex(possiblyAdjacent)) {
+				Vertex *adjacentCandidate = nextVertex(possiblyAdjacent);
+				//Look for a vertex that can reach pathVertex and matches the minimum path length calculated before
+				if (containsVertex(adjacentCandidate->adjacent, pathVertex)) {
+					const int otherDistance = weightToVertex(shortest, adjacentCandidate);
+					if (otherDistance != INT_MAX && otherDistance + weightToVertex(adjacentCandidate->adjacent, pathVertex) == minDistance) {
+						pathVertex = adjacentCandidate;
+						break; //no need to look for any other path
+					}
+				}
 			}
-			pathVertex = next;
-			next = next2;
+			free(possiblyAdjacent);
 		}
-		for (pathVertex = start; pathVertex; pathVertex = pathVertex->decoration) printf("%c\n", pathVertex->data);
+		freeSetVertex(shortest);
+		printVertex(start); //print the final vertex too (since loop ends when pathVertex == start)
+		while (!isEmptyDeque(visitedStack)) printVertex(popFront(visitedStack)); //print in reverse order
+		freeDeque(visitedStack);
 		return result;
 	}
 }

@@ -29,6 +29,7 @@ int main() {
 	printf("%d\n\n", shortestPath(graph, d, m));
 	printf("%d\n\n", shortestPath(graph, b, c));
 	printf("%d\n\n", shortestPath(graph, m, c));
-	printf("%d\n", shortestPath(graph, l, l));
+	printf("%d\n\n", shortestPath(graph, l, l));
+	printf("%d\n\n", shortestPath(graph, b, addVertex(graph, 'q')));
 	freeGraph(graph);
 }

@@ -5,7 +5,6 @@
 	typedef struct vertexHashSet VertexHashSet;
 	typedef struct {
 		VertexData data;
-		void *decoration;
 		VertexHashSet *adjacent;
 	} Vertex;
 
