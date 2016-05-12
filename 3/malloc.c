@@ -81,20 +81,24 @@ void our_free(void *address) {
 }
 
 void *our_realloc(void *address, size_t size) {
-	our_free(address); //ensure address exists
-	BlockMetadata *metadata = (BlockMetadata *)address - 1;
-	if (size > metadata->size) {
-		void *newAddress = our_malloc(size);
-		memmove(newAddress, address, metadata->size); //migrate all old data
-		return newAddress;
+	if (address) {
+		our_free(address); //ensure address exists
+		BlockMetadata *metadata = (BlockMetadata *)address - 1;
+		if (size > metadata->size) {
+			void *newAddress = our_malloc(size);
+			memmove(newAddress, address, metadata->size); //migrate all old data
+			return newAddress;
+		}
+		else { //can reuse old block
+			metadata->used = true; //since free() was called
+			return address;
+		}
 	}
-	else { //can reuse old block
-		metadata->used = true; //since free() was called
-		return address;
-	}
+	else return our_malloc(size);
 }
 
-void *our_calloc(size_t size) {
+void *our_calloc(size_t size1, size_t size2) {
+	const unsigned int size = size1 * size2;
 	void *address = our_malloc(size);
 	memset(address, 0, size);
 	return address;
@@ -102,10 +106,10 @@ void *our_calloc(size_t size) {
 
 int main() {
 	memset(heap, 42, SIZE); //pretend that we have garbage in the heap memory
-	int *array = our_malloc(sizeof(*array) * 5);
+	int *array = our_realloc(NULL, sizeof(*array) * 5);
 	for (int i = 0; i != 5; i++) array[i] = i;
 	for (int i = 0; i != 5; i++) assert(i == array[i]);
-	int *array2 = our_calloc(sizeof(*array2) * 1000);
+	int *array2 = our_calloc(sizeof(*array2), 1000);
 	for (int i = 0; i != 1000; i++) assert(!array2[i]); //ensure array2 was properly cleared
 	printMemoryInformation();
 	our_free(NULL);
