@@ -41,6 +41,12 @@ void removeFromFreeList(BlockMetadata *block) {
 		currentBlock = &(*currentBlock)->next;
 	}
 }
+bool isFree(BlockMetadata *block) {
+	for (BlockMetadata *currentBlock = freeBlocks; currentBlock; currentBlock = currentBlock->next) {
+		if (currentBlock == block) return true;
+	}
+	return false;
+}
 //If a sufficient space can be split off the block, resize the block and return the new block's metadata
 //Else, un-free the block and return it
 BlockMetadata *split(BlockMetadata *block, size_t size) {
@@ -60,7 +66,7 @@ BlockMetadata *split(BlockMetadata *block, size_t size) {
 void *new_malloc(size_t size) {
 	BlockMetadata *metadata = (BlockMetadata *)heapPointer;
 	metadata->size = size;
-	heapPointer += size + sizeof(BlockMetadata);
+	heapPointer += sizeof(*metadata) + size;
 	return metadata + 1;
 }
 BlockMetadata *blockToUse;
@@ -70,7 +76,7 @@ bool reusable(BlockMetadata *block, void *ctx) {
 		blockToUse = block;
 		return true;
 	}
-	return false;
+	else return false;
 }
 void *our_malloc(size_t size) {
 	blockToUse = NULL;
@@ -92,10 +98,31 @@ void printMemoryInformation() {
 	putchar('\n');
 }
 
+BlockMetadata *getNextBlock(BlockMetadata *block) {
+	return (BlockMetadata *)((char *)block + sizeof(*block) + block->size);
+}
+void joinBlocks(BlockMetadata *block) {
+	BlockMetadata *nextBlock = getNextBlock(block);
+	removeFromFreeList(nextBlock);
+	block->size += sizeof(*nextBlock) + nextBlock->size;
+	fprintf(stderr, "Joining %p with %p\n", (void *)(block + 1), (void *)(nextBlock + 1));
+}
+bool lookForPreviousBlock(BlockMetadata *block, void *ctx) {
+	if (getNextBlock(block) == (BlockMetadata *)ctx) {
+		joinBlocks(block);
+		return true;
+	}
+	else return false;
+}
 void our_free(void *address) {
 	if (address) { //if address == NULL, nothing needs to be one
 		BlockMetadata *metadata = (BlockMetadata *)address - 1;
+		BlockMetadata *nextBlock = getNextBlock(metadata);
+		if ((char *)nextBlock != heapPointer) {
+			if (isFree(nextBlock)) joinBlocks(metadata); //if the next block exists and is free, join the two blocks
+		}
 		addToFreeList(metadata);
+		lookDownHeap(&lookForPreviousBlock, metadata); //if the previous block is free, join it with this one
 	}
 }
 
@@ -139,6 +166,10 @@ int main() {
 	assert(c == a);
 	uint32_t *smallD = our_malloc(sizeof(*smallD) * 100);
 	uint32_t *bigD = our_malloc(sizeof(*bigD) * 1000);
+	printf("small stored in ");
+	printBlock((BlockMetadata *)smallD - 1, NULL);
+	printf("big stored in ");
+	printBlock((BlockMetadata *)bigD - 1, NULL);
 	our_free(smallD);
 	our_free(bigD);
 	printMemoryInformation(); //should have one block of 400 and one block of 4000 free
@@ -146,5 +177,4 @@ int main() {
 	printf("e stored in ");
 	printBlock((BlockMetadata *)e - 1, NULL);
 	printMemoryInformation();
-	assert((char *)bigD + ((BlockMetadata *)bigD - 1)->size == heapPointer);
 }
