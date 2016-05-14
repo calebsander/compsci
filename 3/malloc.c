@@ -126,27 +126,6 @@ void our_free(void *address) {
 	}
 }
 
-/*
-void *our_realloc(void *address, size_t size) {
-	if (address) {
-		our_free(address); //ensure address exists
-		BlockMetadata *metadata = (BlockMetadata *)address - 1;
-		void *newAddress;
-		if (size > metadata->size) newAddress = our_malloc(size);
-		else newAddress = split(metadata, size) + 1; //can reuse old block
-		memmove(newAddress, address, metadata->size); //migrate all old data
-		return newAddress;
-	}
-	else return our_malloc(size);
-}
-
-void *our_calloc(size_t size1, size_t size2) {
-	const unsigned int size = size1 * size2;
-	void *address = our_malloc(size);
-	memset(address, 0, size);
-	return address;
-}*/
-
 int main() {
 	memset(heap, 42, SIZE); //pretend that we have garbage in the heap memory
 	uint32_t *a = our_malloc(sizeof(*a) * 10);
