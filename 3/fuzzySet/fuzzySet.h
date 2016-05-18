@@ -11,6 +11,7 @@
 	} Element;
 
 	unsigned int hashKey(K key, unsigned int bucketCount);
+	bool equals(K key1, K key2);
 
 	FuzzySet *makeEmptyFuzzySet();
 	double getIn(FuzzySet *set, K key);

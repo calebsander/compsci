@@ -31,6 +31,9 @@ struct fuzzySet {
 unsigned int hashKey(K key, unsigned int bucketCount) {
 	return (unsigned int)key % bucketCount;
 }
+bool equals(K key1, K key2) {
+	return key1 == key2;
+}
 void addElementResize(FuzzySet *set, K key, double in, bool external);
 void allocateBuckets(FuzzySet *set, unsigned int count) {
 	const unsigned int oldCount = set->bucketCount;
@@ -76,9 +79,9 @@ FuzzySet *makeEmptyFuzzySet() {
 double getInNoCache(FuzzySet *set, K key) {
 	//Look through cache
 	for (BucketNode *node = set->buckets[hashKey(key, set->bucketCount)]; node; node = node->next) {
-		if (node->key == key) return node->in;
+		if (equals(node->key, key)) return node->in;
 	}
-	//if not in cache
+	//If not in cache
 	switch (set->operands.operation) {
 		case NONE:
 			return 0.0; //value simply didn't exist
@@ -109,7 +112,7 @@ void addElementResize(FuzzySet *set, K key, double in, bool external) {
 	if (external && set->elementCount + 1 > (int)((double)set->bucketCount * LOAD_FACTOR)) allocateBuckets(set, set->bucketCount << 1); //there is a possibility of exceeding the load factor
 	BucketNode **node = set->buckets + hashKey(key, set->bucketCount);
 	while (*node) {
-		if ((*node)->key == key) return; //key already exists
+		if (equals((*node)->key, key)) return; //key already exists
 		node = &((*node)->next);
 	}
 	if (external) set->elementCount++;
@@ -118,7 +121,7 @@ void addElementResize(FuzzySet *set, K key, double in, bool external) {
 void removeElement(FuzzySet *set, K key) {
 	BucketNode **node = set->buckets + hashKey(key, set->bucketCount);
 	while (*node) {
-		if ((*node)->key == key) {
+		if (equals((*node)->key, key)) {
 			BucketNode *removeNode = *node;
 			*node = (*node)->next;
 			free(removeNode);
@@ -139,6 +142,15 @@ void freeSet(FuzzySet *set) {
 			node = node->next;
 			free(lastNode);
 		}
+	}
+	switch (set->operands.operation) {
+		case UNION:
+		case INTERSECTION:
+			freeSet(set->operands.set2);
+		case COMPLEMENT:
+			freeSet(set->operands.set1);
+		default:
+			break;
 	}
 	free(set->buckets);
 	free(set);
