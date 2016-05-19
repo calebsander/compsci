@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "fuzzySet.h"
 
@@ -31,7 +32,7 @@ struct fuzzySet {
 unsigned int hashKey(K key, unsigned int bucketCount) {
 	return (unsigned int)key % bucketCount;
 }
-bool equals(K key1, K key2) {
+bool equals(K key1, K key2) { //we say two keys are equal iff they point to the same thing
 	return key1 == key2;
 }
 void addElementResize(FuzzySet *set, K key, double in, bool external);
@@ -208,4 +209,14 @@ Element next(FuzzySetIterator *iterator) {
 	iterator->nextNode = iterator->nextNode->next;
 	advanceIterator(iterator);
 	return result;
+}
+
+void printCachedValues(FuzzySet *set) {
+	for (unsigned int bucket = 0; bucket < set->bucketCount; bucket++) {
+		for (BucketNode *bucketNode = set->buckets[bucket]; bucketNode; bucketNode = bucketNode->next) {
+			const double in = bucketNode->in;
+			if (in != 0.0) printf("%d - in %f\n", *((int *)bucketNode->key), bucketNode->in);
+		}
+	}
+	putchar('\n');
 }

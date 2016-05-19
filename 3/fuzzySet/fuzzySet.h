@@ -2,7 +2,7 @@
 	#define __FUZZY_INCLUDED__
 	#include <stdbool.h>
 
-	typedef int K;
+	typedef void *K;
 	typedef struct fuzzySet FuzzySet;
 	typedef struct fuzzySetIterator FuzzySetIterator;
 	typedef struct {
@@ -28,4 +28,7 @@
 	FuzzySetIterator *iterator(FuzzySet *set);
 	bool hasNext(FuzzySetIterator *iterator);
 	Element next(FuzzySetIterator *iterator);
+
+	//REMOVE LATER
+	void printCachedValues(FuzzySet *set);
 #endif
