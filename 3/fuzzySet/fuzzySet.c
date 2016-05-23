@@ -29,12 +29,6 @@ struct fuzzySet {
 	Operands operands;
 };
 
-unsigned int hashKey(K key, unsigned int bucketCount) {
-	return (unsigned int)key % bucketCount;
-}
-bool equals(K key1, K key2) { //we say two keys are equal iff they point to the same thing
-	return key1 == key2;
-}
 void addElementResize(FuzzySet *set, K key, double in, bool external);
 void allocateBuckets(FuzzySet *set, unsigned int count) {
 	const unsigned int oldCount = set->bucketCount;

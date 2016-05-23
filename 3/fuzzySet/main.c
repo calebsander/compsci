@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include "fuzzySet.h"
 
+unsigned int hashKey(K key, unsigned int bucketCount) {
+	return (unsigned int)((unsigned long)key % bucketCount);
+}
+bool equals(K key1, K key2) { //we say two keys are equal iff they point to the same thing
+	return key1 == key2;
+}
+
 #define MAX_INT 100
 unsigned int CACHED_POINTERS[MAX_INT];
 
