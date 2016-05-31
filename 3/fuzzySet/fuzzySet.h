@@ -28,7 +28,4 @@
 	FuzzySetIterator *iterator(FuzzySet *set);
 	bool hasNext(FuzzySetIterator *iterator);
 	Element next(FuzzySetIterator *iterator);
-
-	//REMOVE LATER
-	void printCachedValues(FuzzySet *set);
 #endif

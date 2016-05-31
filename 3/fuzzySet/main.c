@@ -39,6 +39,8 @@ int main() {
 		else assert(getIn(set2, CACHED_POINTERS + i) == 1.0);
 	}
 	//printCachedValues(set2); //make sure values have successfully been cached
+	freeSet(set1);
+	freeSet(set2);
 	FuzzySet *primeSet = makeEmptyFuzzySet();
 	for (unsigned int i = 1; i < MAX_INT; i++) {
 		if (isPrime(i)) addElement(primeSet, CACHED_POINTERS + i, 0.5);
@@ -55,5 +57,8 @@ int main() {
 	FuzzySet *intersection = intersectionSet(evenSet, modSet);
 	for (unsigned int i = 0; i < MAX_INT; i++) printf("%d: %f\n", i, getIn(intersection, CACHED_POINTERS + i));
 	freeSet(unionOfSets);
+	freeSet(intersection);
+	freeSet(modSet);
+	freeSet(primeSet);
 	freeSet(evenSet);
 }

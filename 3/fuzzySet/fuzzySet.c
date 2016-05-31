@@ -138,15 +138,6 @@ void freeSet(FuzzySet *set) {
 			free(lastNode);
 		}
 	}
-	switch (set->operands.operation) {
-		case UNION:
-		case INTERSECTION:
-			freeSet(set->operands.set2);
-		case COMPLEMENT:
-			freeSet(set->operands.set1);
-		default:
-			break;
-	}
 	free(set->buckets);
 	free(set);
 }
