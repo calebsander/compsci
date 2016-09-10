@@ -14,5 +14,10 @@ CHIP Bit {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    Not(in=load, out=nload);
+    And(a=dffout, b=nload, out=saved);
+    And(a=in, b=load, out=loaded);
+    Or(a=saved, b=loaded, out=dffin);
+    DFF(in=dffin, out=dffout);
+    And(a=dffout, b=true, out=out); //echo dffout to out
 }

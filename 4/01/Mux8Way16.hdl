@@ -18,5 +18,16 @@ CHIP Mux8Way16 {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    Not(in=sel[2], out=former);
+
+    Duplicate16(in=former, out=dupformer);
+    Duplicate16(in=sel[2], out=duplatter);
+
+    Mux4Way16(a=a, b=b, c=c, d=d, sel=sel[0..1], out=formermux);
+    Mux4Way16(a=e, b=f, c=g, d=h, sel=sel[0..1], out=lattermux);
+
+    And16(a=dupformer, b=formermux, out=formerout);
+    And16(a=duplatter, b=lattermux, out=latterout);
+
+    Or16(a=formerout, b=latterout, out=out);
 }

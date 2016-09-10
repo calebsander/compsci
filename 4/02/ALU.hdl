@@ -7,7 +7,7 @@
  * The ALU (Arithmetic Logic Unit).
  * Computes one of the following functions:
  * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
- * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs,
  * according to 6 input bits denoted zx,nx,zy,ny,f,no.
  * In addition, the ALU computes two 1-bit outputs:
  * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
@@ -20,15 +20,15 @@
 // if (nx == 1) set x = !x       // bitwise not
 // if (zy == 1) set y = 0        // 16-bit constant
 // if (ny == 1) set y = !y       // bitwise not
-// if (f == 1)  set out = x + y  // integer 2's complement addition
 // if (f == 0)  set out = x & y  // bitwise and
+// else         set out = x + y  // integer 2's complement addition
 // if (no == 1) set out = !out   // bitwise not
 // if (out == 0) set zr = 1
 // if (out < 0) set ng = 1
 
 CHIP ALU {
-    IN  
-        x[16], y[16],  // 16-bit inputs        
+    IN
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -36,11 +36,64 @@ CHIP ALU {
         f,  // compute out = x + y (if 1) or x & y (if 0)
         no; // negate the out output?
 
-    OUT 
+    OUT
         out[16], // 16-bit output
         zr, // 1 if (out == 0), 0 otherwise
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+    //x->zeroedx by applying zx
+    Not(in=zx, out=notzx);
+    Duplicate16(in=notzx, out=dupnotzx);
+    And16(a=x, b=dupnotzx, out=zeroedx);
+
+    //zeroedx->nottedx by applying nx
+    Not16(in=zeroedx, out=notx);
+    Not(in=nx, out=notnx);
+    Duplicate16(in=nx, out=dupnx);
+    Duplicate16(in=notnx, out=dupnotnx);
+    And16(a=zeroedx, b=dupnotnx, out=xout);
+    And16(a=notx, b=dupnx, out=notxout);
+    Or16(a=xout, b=notxout, out=nottedx);
+
+    //y->zeroedy by applying zy
+    Not(in=zy, out=notzy);
+    Duplicate16(in=notzy, out=dupnotzy);
+    And16(a=y, b=dupnotzy, out=zeroedy);
+
+    //zeroedy->nottedy by applying ny
+    Not16(in=zeroedy, out=noty);
+    Not(in=ny, out=notny);
+    Duplicate16(in=ny, out=dupny);
+    Duplicate16(in=notny, out=dupnotny);
+    And16(a=zeroedy, b=dupnotny, out=yout);
+    And16(a=noty, b=dupny, out=notyout);
+    Or16(a=yout, b=notyout, out=nottedy);
+
+    //Compute results of operations
+    Add16(a=nottedx, b=nottedy, out=added);
+    And16(a=nottedx, b=nottedy, out=anded);
+
+    //Get value of out before complementing
+    Not(in=f, out=notf);
+    Duplicate16(in=notf, out=dupand);
+    Duplicate16(in=f, out=dupadd);
+    And16(a=added, b=dupadd, out=addout);
+    And16(a=anded, b=dupand, out=andout);
+    Or16(a=addout, b=andout, out=rawout);
+
+    //rawout->out by applying no
+    Not16(in=rawout, out=noto);
+    Not(in=no, out=notno);
+    Duplicate16(in=no, out=dupno);
+    Duplicate16(in=notno, out=dupnotno);
+    And16(a=rawout, b=dupnotno, out=oout);
+    And16(a=noto, b=dupno, out=notoout);
+    Or16(a=oout, b=notoout, out=preout); //preout is just out, but it needs to be used as an input
+
+    //Get zr and ng and actually set out
+    IsZero(in=preout, out=zr); //has to be a separate chip because out needs to be sub-bussed
+    Duplicate16(in=true, out=allon);
+    And16(a=preout, b=allon, out[15]=ng); //be able to just extract the MSB
+    And16(a=preout, b=allon, out=out); //echo 16 bytes
 }
