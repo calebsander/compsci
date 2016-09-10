@@ -95,5 +95,5 @@ CHIP ALU {
     IsZero(in=preout, out=zr); //has to be a separate chip because out needs to be sub-bussed
     Duplicate16(in=true, out=allon);
     And16(a=preout, b=allon, out[15]=ng); //be able to just extract the MSB
-    And16(a=preout, b=allon, out=out); //echo 16 bytes
+    And16(a=preout, b=allon, out=out); //echo 16 bits to out
 }
