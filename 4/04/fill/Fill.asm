@@ -11,23 +11,33 @@
 // "white" in every pixel;
 // the screen should remain fully clear as long as no key is pressed.
 
-@KBD
-D=M //D = KBD
+//Initialize variables
 @last_key
-M=D //last_key = KBD
+M=0 //last_key = 0
 @SCREEN
 D=A //D = &SCREEN
 @8192
 D=D+A //D = &SCREEN + 8192
 @LAST_PIXEL
 M=D //LAST_PIXEL = &SCREEN + 8192
+
 (LOOP)
 	@KBD
 	D=M //D = KBD
+	@NO_KEY
+	D;JEQ //set this_key to 0 if it no key pressed; otherwise, set it to 1
 	@this_key
-	M=D //this_key = KBD
+	M=1
+	@CHECK_KEY_DIFF
+	0;JMP
+	(NO_KEY)
+	@this_key
+	M=0
+	(CHECK_KEY_DIFF)
+	@this_key
+	D=M //D = this_key
 	@last_key
-	D=D-M //D = KBD - last_key
+	D=D-M //D = this_key - last_key
 	@LOOP
 	D;JEQ //jump back to LOOP if the key hasn't changed
 
@@ -38,18 +48,16 @@ M=D //LAST_PIXEL = &SCREEN + 8192
 	M=D //pixel = &SCREEN
 	(PIXEL_LOOP)
 		@pixel
-		D=M //D = pixel
-		@LAST_PIXEL
-		D=D-M
-		@PIXEL_END
-		D;JEQ //jump if pixel == LAST_PIXEL
-
-		@pixel
 		A=M //A = *pixel
 		M=!M //*pixel = ~(*pixel)
 
 		@pixel
 		M=M+1
+		D=M //D = pixel
+		@LAST_PIXEL
+		D=D-M //D = pixel - LAST_PIXEL
+		@PIXEL_END
+		D;JEQ //quit if pixel == LAST_PIXEL
 		@PIXEL_LOOP
 		0;JMP
 	(PIXEL_END)
