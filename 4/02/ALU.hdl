@@ -43,57 +43,32 @@ CHIP ALU {
 
     PARTS:
     //x->zeroedx by applying zx
-    Not(in=zx, out=notzx);
-    Duplicate16(in=notzx, out=dupnotzx);
-    And16(a=x, b=dupnotzx, out=zeroedx);
+    Mux16(a=x, b=false, sel=zx, out=zeroedx);
 
     //zeroedx->nottedx by applying nx
     Not16(in=zeroedx, out=notx);
-    Not(in=nx, out=notnx);
-    Duplicate16(in=nx, out=dupnx);
-    Duplicate16(in=notnx, out=dupnotnx);
-    And16(a=zeroedx, b=dupnotnx, out=xout);
-    And16(a=notx, b=dupnx, out=notxout);
-    Or16(a=xout, b=notxout, out=nottedx);
+    Mux16(a=zeroedx, b=notx, sel=nx, out=nottedx);
 
     //y->zeroedy by applying zy
-    Not(in=zy, out=notzy);
-    Duplicate16(in=notzy, out=dupnotzy);
-    And16(a=y, b=dupnotzy, out=zeroedy);
+    Mux16(a=y, b=false, sel=zy, out=zeroedy);
 
     //zeroedy->nottedy by applying ny
     Not16(in=zeroedy, out=noty);
-    Not(in=ny, out=notny);
-    Duplicate16(in=ny, out=dupny);
-    Duplicate16(in=notny, out=dupnotny);
-    And16(a=zeroedy, b=dupnotny, out=yout);
-    And16(a=noty, b=dupny, out=notyout);
-    Or16(a=yout, b=notyout, out=nottedy);
+    Mux16(a=zeroedy, b=noty, sel=ny, out=nottedy);
 
     //Compute results of operations
     Add16(a=nottedx, b=nottedy, out=added);
     And16(a=nottedx, b=nottedy, out=anded);
 
     //Get value of out before complementing
-    Not(in=f, out=notf);
-    Duplicate16(in=notf, out=dupand);
-    Duplicate16(in=f, out=dupadd);
-    And16(a=added, b=dupadd, out=addout);
-    And16(a=anded, b=dupand, out=andout);
-    Or16(a=addout, b=andout, out=rawout);
+    Mux16(a=anded, b=added, sel=f, out=rawout);
 
     //rawout->out by applying no
-    Not16(in=rawout, out=noto);
-    Not(in=no, out=notno);
-    Duplicate16(in=no, out=dupno);
-    Duplicate16(in=notno, out=dupnotno);
-    And16(a=rawout, b=dupnotno, out=oout);
-    And16(a=noto, b=dupno, out=notoout);
-    Or16(a=oout, b=notoout, out=preout); //preout is just out, but it needs to be used as an input
+    Not16(in=rawout, out=notout);
+    Mux16(a=rawout, b=notout, sel=no, out=preout); //preout is just out, but it needs to be used as an input
 
     //Get zr and ng and actually set out
     IsZero(in=preout, out=zr); //has to be a separate chip because out needs to be sub-bussed
-    Duplicate16(in=true, out=allon);
-    And16(a=preout, b=allon, out[15]=ng); //be able to just extract the MSB
-    And16(a=preout, b=allon, out=out); //echo 16 bits to out
+    And16(a=preout, b=true, out[15]=ng); //be able to just extract the MSB
+    And16(a=preout, b=true, out=out); //echo 16 bits to out
 }
