@@ -24,17 +24,12 @@ CHIP PC {
     And(a=caninc, b=inc, out=doinc);
 
     //Get value to set
+    Or(a=doinc, b=reset, out=incorreset);
+    Or(a=doload, b=reset, out=loadorreset);
     Inc16(in=lastval, out=onemore);
-    Duplicate16(in=doload, out=dupload);
-    Duplicate16(in=doinc, out=dupinc);
-    And16(a=in, b=dupload, out=loadval);
-    And16(a=onemore, b=dupinc, out=incval);
-    Or16(a=loadval, b=incval, out=newval); //if resetting, dupload == dupinc == 0, so newval will be 0
+    Mux4Way16(a=lastval, b=in, c=onemore, d=false, sel[0]=loadorreset, sel[1]=incorreset, out=newval); //nothing, load, inc, reset
 
     //Set register value if necessary, connect it to the output
-    Or(a=reset, b=load, out=resetload);
-    Or(a=resetload, b=inc, out=change);
-    Register(in=newval, load=change, out=lastval); //lastval == out, but needs to be used internally
-    Duplicate16(in=true, out=allon);
-    And16(a=lastval, b=allon, out=out); //echo lastval to out
+    Register(in=newval, load=true, out=lastval); //lastval == out, but needs to be used internally
+    And16(a=lastval, b=true, out=out); //echo lastval to out
 }
