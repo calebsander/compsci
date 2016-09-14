@@ -52,8 +52,7 @@ M=D //LAST_PIXEL = &SCREEN + 8192
 		M=!M //*pixel = ~(*pixel)
 
 		@pixel
-		M=M+1
-		D=M //D = pixel
+		MD=M+1 //D = ++pixel
 		@LAST_PIXEL
 		D=D-M //D = pixel - LAST_PIXEL
 		@PIXEL_END
