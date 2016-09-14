@@ -39,11 +39,25 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    Register(in=inA, load=loadA, out=outA);
-    Register(in=inD, load=loadD, out=outD);
-    Not(in=jump, out=notjump);
-    PC(in=outA, load=jump, inc=notjump, reset=reset, out[0..14]=pc);
+    Mux16(a[0..14]=instruction[0..14], b=outA, sel=instruction[15], out=aconstant);
+    Not(in=instruction[15], out=constant);
+    Or(a=constant, b=instruction[5], out=loadA);
+    And(a=instruction[15], b=instruction[4], out=loadD);
+    And(a=instruction[15], b=instruction[3], out=writeM);
+    Mux16(a=aconstant, b=aluresult, sel=instruction[15], out=inA);
+    ARegister(in=inA, load=loadA, out=outA);
+    DRegister(in=aluresult, load=loadD, out=outD);
     Mux16(a=outA, b=inM, sel=instruction[12], out=am);
-    ALU(x=outD, y=am);
+    ALU(x=outD, y=am, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluresult, zr=eq, ng=lt);
     And16(a=outA, b=true, out[0..14]=addressM);
+    And16(a=aluresult, b=true, out=outM);
+    Or(a=eq, b=lt, out=le);
+    Not(in=le, out=gt);
+    And(a=lt, b=instruction[2], out=ltjump);
+    And(a=eq, b=instruction[1], out=eqjump);
+    And(a=gt, b=instruction[0], out=gtjump);
+    Or(a=ltjump, b=eqjump, out=lejump);
+    Or(a=lejump, b=gtjump, out=wouldjump);
+    And(a=wouldjump, b=instruction[15], out=jump); //only jump if a C-instruction
+    PC(in=outA, load=jump, inc=true, reset=reset, out[0..14]=pc); //always default to incrementation
 }
