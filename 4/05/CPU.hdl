@@ -39,17 +39,22 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    Not(in=instruction[15], out=constant);
-    Or(a=constant, b=instruction[5], out=loadA); //A will only change if an A-instruction or the ALU output is to be stored in it
+    //A, M, and D registers; handling load bits and new values
+    Not(in=instruction[15], out=ainstruction);
+    Or(a=ainstruction, b=instruction[5], out=loadA); //A will only change if an A-instruction or the ALU output is to be stored in it
     And(a=instruction[15], b=instruction[4], out=loadD); //D will only change if a C-instruction and the ALU output is to be stored in it
     And(a=instruction[15], b=instruction[3], out=writeM); //M will only change if a C-instruction and the ALU output is to be stored in it
-    Mux16(a=aluresult, b=instruction, sel=constant, out=inA); //switch between the instruction constant and the ALU output for the new A value
+    Mux16(a=aluresult, b=instruction, sel=ainstruction, out=inA); //switch between the instruction constant and the ALU output for the new A value
     ARegister(in=inA, load=loadA, out=outA);
     DRegister(in=aluresult, load=loadD, out=outD); //can only ever assume the value that the ALU outputs
+    And16(a=aluresult, b=true, out=outM); //can only ever write to M what the ALU outputs
+
+    //Plugging inputs into the ALU, computing result
     Mux16(a=outA, b=inM, sel=instruction[12], out=am);
     ALU(x=outD, y=am, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluresult, zr=eq, ng=lt);
-    And16(a=aluresult, b=true, out=outM); //can only ever write to M what the ALU outputs
-    And16(a=outA, b=true, out[0..14]=addressM); //request whatever the A register is pointing to
+    And16(a=outA, b=true, out[0..14]=addressM); //request whatever the A register is pointing to for next cycle
+
+    //Find whether jump conditions are met
     Or(a=eq, b=lt, out=le);
     Not(in=le, out=gt);
     And(a=lt, b=instruction[2], out=ltjump);
@@ -58,5 +63,7 @@ CHIP CPU {
     Or(a=ltjump, b=eqjump, out=lejump);
     Or(a=lejump, b=gtjump, out=wouldjump);
     And(a=wouldjump, b=instruction[15], out=jump); //only jump if a C-instruction and a condition is met
-    PC(in=outA, load=jump, inc=true, reset=reset, out[0..14]=pc); //always default to incrementation
+
+    //The program counter; if not resetting, either incrementing or jumping to value in A register
+    PC(in=outA, load=jump, inc=true, reset=reset, out[0..14]=pc); //default to incrementation
 }
