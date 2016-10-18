@@ -59,10 +59,13 @@ const COMPUTE_CODES = new Map()
 	.set('D-1', 0b001110)
 	.set('A-1', 0b110010)
 	.set('D+A', 0b000010)
+	.set('A+D', 0b000010)
 	.set('D-A', 0b010011)
 	.set('A-D', 0b000111)
 	.set('D&A', 0b000000)
+	.set('A&D', 0b000000)
 	.set('D|A', 0b010101)
+	.set('A|D', 0b010101)
 class CInstruction {
 	constructor({expression, jmpExpression}) {
 		const equalIndex = expression.indexOf('=')
@@ -81,7 +84,9 @@ class CInstruction {
 		this.jmpExpression = jmpExpression
 	}
 	parseCompute() {
-		return COMPUTE_CODES.get(this.computation.replace('M', 'A'))
+		const value = COMPUTE_CODES.get(this.computation.replace('M', 'A'))
+		if (value === undefined) throw new Error('Could not parse: ' + this.computation)
+		return value
 	}
 	parseJump() {
 		switch (this.jmpExpression) {
@@ -131,83 +136,103 @@ const SYMBOL_MAP = new Map()
 	.set('KBD', 24576)
 for (let i = 0; i < ALLOCATED_REGISTERS; i++) SYMBOL_MAP.set('R' + String(i), i)
 
+function getLines(stream, lineCallback, endCallback) {
+	let residual = ''
+	stream.on('data', chunk => {
+		chunk = chunk.toString()
+		let lastConsumed = 0
+		for (let i = 0; i < chunk.length; i++) {
+			if (chunk[i] === '\n') {
+				lineCallback(residual + chunk.substring(lastConsumed, i))
+				residual = ''
+				lastConsumed = i + 1
+			}
+		}
+		residual += chunk.substring(lastConsumed)
+	})
+	stream.on('end', () => {
+		lineCallback(residual)
+		endCallback()
+	})
+}
+
 const ASM = '.asm'
 const HACK = '.hack'
 const file = process.argv[2]
 let rootFile
 if (file.endsWith(ASM)) rootFile = file.substring(0, file.length - ASM.length)
 else rootFile = file
-fs.readFile(rootFile + ASM, (err, program) => {
-	if (err) throw new Error('Could not find file: ' + rootFile + ASM)
-	program = program.toString() + '\n'
-	const instructions = []
-	for (let newLineIndex, lastIndex = 0; (newLineIndex = program.indexOf('\n', lastIndex)) !== -1;) {
-		const line = program.substring(lastIndex, newLineIndex)
-		lastIndex = newLineIndex + 1
-
-		let parseState = AT_START
-		let expression = null, jmpExpression = null
-		for (let i = 0; i < line.length; i++) {
-			const char = line[i]
-			if (WHITESPACE.test(char)) continue
-			if (char === '/' && line[i + 1] === '/') break
-			switch (parseState) {
-				case AT_START: {
-					if (char === '@') {
-						parseState = CONSTANT
-						expression = ''
-					}
-					else if (char === '(') {
-						parseState = LABEL
-						expression = ''
-					}
-					else {
-						parseState = COMPUTE
-						expression = char
-					}
-					break
-				}
-				case CONSTANT: {
-					expression += char
-					break
-				}
-				case LABEL: {
-					if (char === ')') parseState = AFTER_LABEL
-					else expression += char
-					break
-				}
-				case COMPUTE: {
-					if (char === ';') {
-						parseState = JMP_CODE
-						jmpExpression = ''
-					}
-					else expression += char
-					break
-				}
-				case JMP_CODE: {
-					jmpExpression += char
-				}
-			}
-		}
+const inStream = fs.createReadStream(rootFile + ASM)
+inStream.on('error', err => {
+	throw new Error('Could not find file: ' + rootFile + ASM)
+})
+const instructions = []
+getLines(inStream, line => {
+	let parseState = AT_START
+	let expression = null, jmpExpression = null
+	for (let i = 0; i < line.length; i++) {
+		const char = line[i]
+		if (WHITESPACE.test(char)) continue
+		if (char === '/' && line[i + 1] === '/') break
 		switch (parseState) {
 			case AT_START: {
+				if (char === '@') {
+					parseState = CONSTANT
+					expression = ''
+				}
+				else if (char === '(') {
+					parseState = LABEL
+					expression = ''
+				}
+				else {
+					parseState = COMPUTE
+					expression = char
+				}
 				break
 			}
 			case CONSTANT: {
-				instructions.push(new AInstruction(expression))
+				expression += char
 				break
 			}
-			case AFTER_LABEL: {
-				SYMBOL_MAP.set(expression, instructions.length)
+			case LABEL: {
+				if (char === ')') parseState = AFTER_LABEL
+				else expression += char
 				break
 			}
-			case COMPUTE:
+			case COMPUTE: {
+				if (char === ';') {
+					parseState = JMP_CODE
+					jmpExpression = ''
+				}
+				else expression += char
+				break
+			}
 			case JMP_CODE: {
-				instructions.push(new CInstruction({expression, jmpExpression}))
-				break
+				jmpExpression += char
 			}
 		}
 	}
+	switch (parseState) {
+		case AT_START: {
+			break
+		}
+		case CONSTANT: {
+			instructions.push(new AInstruction(expression))
+			break
+		}
+		case AFTER_LABEL: {
+			SYMBOL_MAP.set(expression, instructions.length)
+			break
+		}
+		case COMPUTE:
+		case JMP_CODE: {
+			instructions.push(new CInstruction({expression, jmpExpression}))
+			break
+		}
+		default:
+			throw new Error('Could not parse line: ' + line)
+	}
+}, () => {
 	let firstUnusedRegister = ALLOCATED_REGISTERS
 	for (const instruction of instructions) {
 		if (instruction instanceof AInstruction) {
