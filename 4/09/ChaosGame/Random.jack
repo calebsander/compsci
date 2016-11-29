@@ -1,0 +1,15 @@
+class Random {
+	field int lastValue;
+
+	constructor Random new(int seed) {
+		let lastValue = seed;
+		return this;
+	}
+
+	method int nextInt() {
+		var int nextInt;
+		let nextInt = Util.mod((lastValue * 23) + 1, 1001);
+		let lastValue = nextInt;
+		return nextInt;
+	}
+}

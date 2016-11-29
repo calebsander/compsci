@@ -1,0 +1,22 @@
+class Pixel {
+	field int x, y;
+
+	constructor Pixel new(int xIn, int yIn) {
+		let x = xIn;
+		let y = yIn;
+		return this;
+	}
+
+	method int getX() { return x; }
+	method int getY() { return y; }
+
+	method void halfTowards(Pixel other) {
+		let x = (x + other.getX()) / 2;
+		let y = (y + other.getY()) / 2;
+		return;
+	}
+	method void draw() {
+		do Screen.drawPixel(x, y);
+		return;
+	}
+}
