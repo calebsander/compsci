@@ -8,7 +8,7 @@ class Random {
 
 	method int nextInt() {
 		var int nextInt;
-		let nextInt = Util.mod((lastValue * 23) + 1, 1001);
+		let nextInt = Util.mod((lastValue * 8121) + 28411, 12345);
 		let lastValue = nextInt;
 		return nextInt;
 	}

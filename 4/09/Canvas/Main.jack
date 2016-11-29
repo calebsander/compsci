@@ -1,0 +1,70 @@
+class Main {
+	function void main() {
+		var char LEFT, RIGHT, UP, DOWN, ENTER;
+		var Pixel topLeft, bottomRight;
+		var char keyPressed;
+		var boolean noMovement;
+
+		let LEFT = 130;
+		let RIGHT = 132;
+		let UP = 131;
+		let DOWN = 133;
+		let ENTER = 128;
+
+		while (true) {
+			let topLeft = Pixel.new(0, 0);
+			let keyPressed = 0;
+			while (~(keyPressed = ENTER)) {
+				let keyPressed = Keyboard.keyPressed();
+				let noMovement = false;
+				if (keyPressed = LEFT) { do topLeft.moveLeft(); }
+				else {
+					if (keyPressed = RIGHT) { do topLeft.moveRight(); }
+					else {
+						if (keyPressed = UP) { do topLeft.moveUp(); }
+						else {
+							if (keyPressed = DOWN) { do topLeft.moveDown(); }
+							else { let noMovement = true; }
+						}
+					}
+				}
+				if (~noMovement) {
+					do Screen.clearScreen();
+					do Screen.setColor(true);
+					do topLeft.draw();
+				}
+				do Sys.wait(5);
+			}
+			while (keyPressed = ENTER) {
+				let keyPressed = Keyboard.keyPressed();
+			}
+			let bottomRight = Pixel.copy(topLeft);
+			while (~(keyPressed = ENTER)) {
+				let keyPressed = Keyboard.keyPressed();
+				let noMovement = false;
+				if (keyPressed = LEFT) { do bottomRight.moveLeft(); }
+				else {
+					if (keyPressed = RIGHT) { do bottomRight.moveRight(); }
+					else {
+						if (keyPressed = UP) { do bottomRight.moveUp(); }
+						else {
+							if (keyPressed = DOWN) { do bottomRight.moveDown(); }
+							else { let noMovement = true; }
+						}
+					}
+				}
+				if (~noMovement) {
+					do Screen.clearScreen();
+					do Screen.setColor(true);
+					do topLeft.draw();
+					do bottomRight.draw();
+				}
+				do Sys.wait(5);
+			}
+			while (keyPressed = ENTER) {
+				let keyPressed = Keyboard.keyPressed();
+			}
+		}
+		return;
+	}
+}

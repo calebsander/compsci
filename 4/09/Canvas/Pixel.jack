@@ -1,0 +1,42 @@
+class Pixel {
+	field int x, y;
+
+	constructor Pixel new(int xIn, int yIn) {
+		let x = xIn;
+		let y = yIn;
+		return this;
+	}
+	constructor Pixel copy(Pixel other) {
+		let x = other.getX();
+		let y = other.getY();
+		return this;
+	}
+
+	method int getX() { return x; }
+	method int getY() { return y; }
+
+	method void moveLeft() {
+		if (x > 0) { let x = x - 1; }
+		return;
+	}
+	method void moveRight() {
+		if (x < 511) { let x = x + 1; }
+		return;
+	}
+	method void moveUp() {
+		if (y > 0) { let y = y - 1; }
+		return;
+	}
+	method void moveDown() {
+		if (y < 255) { let y = y + 1; }
+		return;
+	}
+	method void draw() {
+		do Screen.drawPixel(x, y);
+		return;
+	}
+	method void dispose() {
+		do Memory.deAlloc(this);
+		return;
+	}
+}
