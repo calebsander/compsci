@@ -14,7 +14,7 @@ data Expression
 
 data Statement
   = Assign VariableName Expression
-  | Seq Statement Statement
+  | Sequence Statement Statement
 
 type Environment = [(VariableName, Int)]
 
@@ -42,7 +42,7 @@ interpretStatement env (Assign variableName expression) =
   in
     -- It is not a problem that the same variable can be in the environment twice; only the first instance matters
     (variableName, value) : envAfterExpression
-interpretStatement env (Seq statement1 statement2) =
+interpretStatement env (Sequence statement1 statement2) =
   let
     envAfterFirst = interpretStatement env statement1
   in
@@ -65,11 +65,11 @@ interpretExpression (StmExp statement expression) env =
 
 testExpression =
   StmExp
-    (Seq
+    (Sequence
       (Assign "a"
         (Binop (Const 5) Plus (Const 3))
       )
-      (Seq
+      (Sequence
         (Assign "b"
           (StmExp
             (Assign "c" (Const 2))
@@ -88,3 +88,4 @@ testExpression =
         (Var "a")
       )
     )
+interpretedTestExpression = interpretExpression testExpression []
