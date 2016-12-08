@@ -1,8 +1,0 @@
-CHIP And3 {
-	IN a, b, c;
-	OUT out;
-
-	PARTS:
-	And(a=a, b=b, out=ab);
-	And(a=ab, b=c, out=out);
-}
