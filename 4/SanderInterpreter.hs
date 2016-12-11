@@ -36,9 +36,7 @@ opFunction Div = div
 interpretStatement :: Environment -> Statement -> Environment
 interpretStatement env (Assign variableName expression) =
   let
-    interpretedExpression = interpretExpression expression env
-    value = fst interpretedExpression
-    envAfterExpression = snd interpretedExpression
+    (value, envAfterExpression) = interpretExpression expression env
   in
     -- It is not a problem that the same variable can be in the environment twice; only the first instance matters
     (variableName, value) : envAfterExpression
