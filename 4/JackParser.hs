@@ -157,7 +157,7 @@ parseKeywordValue :: [(String, a)] -> Parser a
 parseKeywordValue nameValues =
   let
     getParser (name, value) =
-      parseMap (\_ -> value) (keyword name)
+      parseMap (const value) (keyword name)
   in
     choice (map getParser nameValues)
 
@@ -234,11 +234,14 @@ parseEnd =
       "" -> Just ((), "")
       _ -> Nothing
 
+isNewLine :: Char -> Bool
+isNewLine c = c == '\r' || c == '\n'
+
 parseLineComment :: Parser ()
 parseLineComment = do
   keyword "//"
   parseUntil $ choice
-    [ keyword "\n"
+    [ parseMap (const ()) (satisfies isNewLine)
     , parseEnd
     ]
 
@@ -267,10 +270,7 @@ requiredSpaceParser = do
 
 optionalSpaceParser :: Parser ()
 optionalSpaceParser =
-  choice
-    [ requiredSpaceParser
-    , return ()
-    ]
+  parseMap (const ()) (parseOptional requiredSpaceParser)
 
 parseCommaSeparated :: Parser a -> Parser [a]
 parseCommaSeparated parser = do
@@ -309,12 +309,10 @@ parseClassVar = do
 
 parseOptional :: Parser a -> Parser (Maybe a)
 parseOptional parser =
-  Parser $ \string ->
-    case parse parser string of
-      Nothing ->
-        Just (Nothing, string)
-      Just (value, remaining) ->
-        Just (Just value, remaining)
+  choice
+    [ parseMap Just parser
+    , return Nothing
+    ]
 
 parseIntConstant :: Parser Int
 parseIntConstant =
@@ -336,7 +334,7 @@ parseStringConstant = do
   keyword "\""
   string <- zeroOrMore $
     satisfies $ \c ->
-      not (c == '\r' || c == '\n' || c == '"')
+      not ((isNewLine c) || c == '"')
   keyword "\""
   return string
 
@@ -395,10 +393,10 @@ parseSubCall =
 
 parseUnaryOp :: Parser UnaryOp
 parseUnaryOp =
-  choice
-   [ parseMap (\_ -> LogicalNot) (keyword "~")
-   , parseMap (\_ -> IntegerNegate) (keyword "-")
-   ]
+  parseKeywordValue
+    [ ("~", LogicalNot)
+    , ("-", IntegerNegate)
+    ]
 
 parseUnaryOperation :: Parser Term
 parseUnaryOperation = do
