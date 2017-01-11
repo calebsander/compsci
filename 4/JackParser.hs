@@ -177,6 +177,8 @@ zeroOrMore parser =
       Just (aValue, remaining) ->
         parse (parseMap (aValue :) (zeroOrMore parser)) remaining
 
+oneOrMore :: Parser a -> Parser [a]
+oneOrMore parser = parseMap2 (:) parser (zeroOrMore parser)
 
 identifier :: Parser String
 identifier =
@@ -210,14 +212,58 @@ choice (firstChoice : remainingChoices) =
       success ->
         success
 
-requiredSpaceParser :: Parser ()
-requiredSpaceParser =
+parseUntil :: Parser a -> Parser a
+parseUntil parser =
+  Parser $ \string ->
+    let parsed = parse parser string
+    in
+      case parsed of
+        Nothing ->
+          case string of
+            "" ->
+              Nothing
+            _ : remaining ->
+              parse (parseUntil parser) remaining
+        _ ->
+          parsed
+
+parseEnd :: Parser ()
+parseEnd =
+  Parser $ \string ->
+    case string of
+      "" -> Just ((), "")
+      _ -> Nothing
+
+parseLineComment :: Parser ()
+parseLineComment = do
+  keyword "//"
+  parseUntil $ choice
+    [ keyword "\n"
+    , parseEnd
+    ]
+
+parseBlockComment :: Parser ()
+parseBlockComment = do
+  keyword "/*"
+  parseUntil (keyword "*/")
+
+whiteSpaceParser :: Parser ()
+whiteSpaceParser =
   Parser $ \string ->
     let
       dropped = dropWhile isSpace string
     in
       if string == dropped then Nothing -- some whitespace required
       else Just ((), dropped)
+
+requiredSpaceParser :: Parser ()
+requiredSpaceParser = do
+  oneOrMore $ choice
+    [ whiteSpaceParser
+    , parseLineComment
+    , parseBlockComment
+    ]
+  return ()
 
 optionalSpaceParser :: Parser ()
 optionalSpaceParser =
