@@ -153,21 +153,29 @@ parseMap2 f pa pb = do
 
 -- PARSER FUNCTIONS WRITTEN IN CLASS
 
+parseKeywordValue :: [(String, a)] -> Parser a
+parseKeywordValue nameValues =
+  let
+    getParser (name, value) =
+      parseMap (\_ -> value) (keyword name)
+  in
+    choice (map getParser nameValues)
+
 parseClassVarScope :: Parser ClassVarScope
 parseClassVarScope =
-  choice
-    [ parseMap (\_ -> Static) (keyword "static")
-    , parseMap (\_ -> Field) (keyword "field")
+  parseKeywordValue
+    [ ("static", Static)
+    , ("field", Field)
     ]
 
 zeroOrMore :: Parser a -> Parser [a]
-zeroOrMore p =
-  Parser $ \s ->
-    case parse p s of
+zeroOrMore parser =
+  Parser $ \string ->
+    case parse parser string of
       Nothing ->
-        Just ([], s)
-      Just (a, s') ->
-        parse (parseMap (a :) (zeroOrMore p)) s'
+        Just ([], string)
+      Just (aValue, remaining) ->
+        parse (parseMap (aValue :) (zeroOrMore parser)) remaining
 
 
 identifier :: Parser String
@@ -184,31 +192,32 @@ identifier =
 jackTypeParser :: Parser Type
 jackTypeParser =
   choice
-    [ parseMap (\_ -> JackInt)  (keyword "int")
-    , parseMap (\_ -> JackChar) (keyword "char")
-    , parseMap (\_ -> JackBool) (keyword "boolean")
+    [ parseKeywordValue
+      [ ("int", JackInt)
+      , ("char", JackChar)
+      , ("boolean", JackBool)
+      ]
     , parseMap JackClass identifier
     ]
 
 choice :: [Parser a] -> Parser a
-choice [] = Parser $ \s -> Nothing
-choice (firstChoice:remainingChoices) =
-  Parser $ \s ->
-    case parse firstChoice s of
+choice [] = parseFail
+choice (firstChoice : remainingChoices) =
+  Parser $ \string ->
+    case parse firstChoice string of
       Nothing ->
-        parse (choice remainingChoices) s
+        parse (choice remainingChoices) string
       success ->
         success
 
 requiredSpaceParser :: Parser ()
 requiredSpaceParser =
-  Parser (\string ->
+  Parser $ \string ->
     let
       dropped = dropWhile isSpace string
     in
       if string == dropped then Nothing -- some whitespace required
       else Just ((), dropped)
-  )
 
 optionalSpaceParser :: Parser ()
 optionalSpaceParser =
@@ -227,14 +236,10 @@ parseCommaSeparated parser = do
       optionalSpaceParser
       parser
     return (first : remaining)
-  case list of
-    Nothing ->
-      return []
-    Just list ->
-      return list
+  return (resolveMaybeList list)
 
 parseFail :: Parser a
-parseFail = Parser(\_ -> Nothing)
+parseFail = Parser (\_ -> Nothing)
 
 parseVarDec :: Parser VarDec
 parseVarDec = do
@@ -258,17 +263,16 @@ parseClassVar = do
 
 parseOptional :: Parser a -> Parser (Maybe a)
 parseOptional parser =
-  Parser (\string ->
+  Parser $ \string ->
     case parse parser string of
       Nothing ->
         Just (Nothing, string)
       Just (value, remaining) ->
         Just (Just value, remaining)
-  )
 
 parseIntConstant :: Parser Int
 parseIntConstant =
-  Parser (\string ->
+  Parser $ \string ->
     case string of
       "" ->
         Nothing
@@ -280,32 +284,33 @@ parseIntConstant =
               Just (readValue, dropWhile isDigit string)
             else Nothing
         else Nothing
-  )
 
 parseStringConstant :: Parser String
 parseStringConstant = do
   keyword "\""
-  string <- zeroOrMore (satisfies (\c -> not (c == '\r' || c == '\n' || c == '"')))
+  string <- zeroOrMore $
+    satisfies $ \c ->
+      not (c == '\r' || c == '\n' || c == '"')
   keyword "\""
   return string
 
-parseArrayAccess :: Parser VarAccess
-parseArrayAccess = do
-  varName <- identifier
-  optionalSpaceParser
-  keyword "["
-  optionalSpaceParser
-  index <- parseExpression
-  optionalSpaceParser
-  keyword "]"
-  return (Subscript varName index)
-
 parseAccess :: Parser VarAccess
 parseAccess =
-  choice
-    [ parseArrayAccess
-    , parseMap Var identifier -- this must come after array access because it can start that expression
-    ]
+  let
+    parseArrayAccess = do
+      varName <- identifier
+      optionalSpaceParser
+      keyword "["
+      optionalSpaceParser
+      index <- parseExpression
+      optionalSpaceParser
+      keyword "]"
+      return (Subscript varName index)
+  in
+    choice
+      [ parseArrayAccess
+      , parseMap Var identifier -- this must come after array access because it can start that expression
+      ]
 
 parseParenthesized :: Parser Term
 parseParenthesized = do
@@ -315,7 +320,7 @@ parseParenthesized = do
   keyword ")"
   return (Parenthesized term)
 
-parseUnqualifiedSubCall :: Parser (String, [Expression])
+parseUnqualifiedSubCall :: Parser SubCall
 parseUnqualifiedSubCall = do
   name <- identifier
   optionalSpaceParser
@@ -324,22 +329,22 @@ parseUnqualifiedSubCall = do
   arguments <- parseCommaSeparated parseExpression
   optionalSpaceParser
   keyword ")"
-  return (name, arguments)
+  return (Unqualified name arguments)
 
-parseQualifiedSubCall :: Parser (String, String, [Expression])
+parseQualifiedSubCall :: Parser SubCall
 parseQualifiedSubCall = do
   classOrVarName <- identifier
   optionalSpaceParser
   keyword "."
   optionalSpaceParser
-  (callName, arguments) <- parseUnqualifiedSubCall
-  return (classOrVarName, callName, arguments)
+  Unqualified callName arguments <- parseUnqualifiedSubCall
+  return (Qualified classOrVarName callName arguments)
 
 parseSubCall :: Parser SubCall
 parseSubCall =
   choice
-    [ parseMap (\(name, arguments) -> Unqualified name arguments) parseUnqualifiedSubCall
-    , parseMap (\(classOrVarName, callName, arguments) -> Qualified classOrVarName callName arguments) parseQualifiedSubCall
+    [ parseUnqualifiedSubCall
+    , parseQualifiedSubCall
     ]
 
 parseUnaryOp :: Parser UnaryOp
@@ -353,7 +358,7 @@ parseUnaryOperation :: Parser Term
 parseUnaryOperation = do
   op <- parseUnaryOp
   optionalSpaceParser
-  term <- parseTerm -- should this not be parseExpression?
+  term <- parseTerm
   return (Unary op term)
 
 parseTerm :: Parser Term
@@ -361,10 +366,12 @@ parseTerm =
   choice
     [ parseMap IntConst parseIntConstant
     , parseMap StringConst parseStringConstant
-    , parseMap (\_ -> BoolConst True) (keyword "true")
-    , parseMap (\_ -> BoolConst False) (keyword "false")
-    , parseMap (\_ -> Null) (keyword "null")
-    , parseMap (\_ -> This) (keyword "this")
+    , parseKeywordValue
+      [ ("true", BoolConst True)
+      , ("false", BoolConst False)
+      , ("null", Null)
+      , ("this", This)
+      ]
     , parseMap SubroutineCall parseSubCall
     , parseMap Access parseAccess -- this must come after array subroutine call because a variable access can start that expression
     , parseParenthesized
@@ -373,17 +380,17 @@ parseTerm =
 
 parseOp :: Parser Op
 parseOp =
-  choice
-   [ parseMap (\_ -> Plus) (keyword "+")
-   , parseMap (\_ -> Minus) (keyword "-")
-   , parseMap (\_ -> Times) (keyword "*")
-   , parseMap (\_ -> Div) (keyword "/")
-   , parseMap (\_ -> And) (keyword "&")
-   , parseMap (\_ -> Or) (keyword "|")
-   , parseMap (\_ -> LessThan) (keyword "<")
-   , parseMap (\_ -> GreaterThan) (keyword ">")
-   , parseMap (\_ -> EqualTo) (keyword "=")
-   ]
+  parseKeywordValue
+    [ ("+", Plus)
+    , ("-", Minus)
+    , ("*", Times)
+    , ("/", Div)
+    , ("&", And)
+    , ("|", Or)
+    , ("<", LessThan)
+    , (">", GreaterThan)
+    , ("=", EqualTo)
+    ]
 
 parseExpression :: Parser Expression
 parseExpression = do
@@ -468,18 +475,22 @@ parseDo = do
   return (Do subCall)
 
 parseReturnStatement :: Parser Statement
-parseReturnStatement = do
-  keyword "return"
-  returnValue <- choice
-    [ do
+parseReturnStatement =
+  let
+    spaceAndValueParser = do
       requiredSpaceParser
       expression <- parseExpression
       optionalSpaceParser
       return (Just expression)
-    , parseMap (\_ -> Nothing) optionalSpaceParser -- this must follow the return value parser since "return" is at the start of "return value"
-    ]
-  keyword ";"
-  return (Return returnValue)
+  in
+    do
+      keyword "return"
+      returnValue <- choice
+        [ spaceAndValueParser
+        , parseMap (\_ -> Nothing) optionalSpaceParser -- this must follow the return value parser since "return" is at the start of "return value"
+        ]
+      keyword ";"
+      return (Return returnValue)
 
 parseStatement :: Parser Statement
 parseStatement =
@@ -493,17 +504,17 @@ parseStatement =
 
 parseSubroutineType :: Parser SubroutineType
 parseSubroutineType =
-  choice
-    [ parseMap (\_ -> Method) (keyword "method")
-    , parseMap (\_ -> Constructor) (keyword "constructor")
-    , parseMap (\_ -> Function) (keyword "function")
+  parseKeywordValue
+    [ ("method", Method)
+    , ("constructor", Constructor)
+    , ("function", Function)
     ]
 
 parseMaybeVoidType :: Parser (Maybe Type)
 parseMaybeVoidType =
   choice
-    [ parseMap (\_ -> Nothing) (keyword "void")
-    , parseMap (\jackType -> Just jackType) jackTypeParser
+    [ parseKeywordValue [("void", Nothing)]
+    , parseMap Just jackTypeParser
     ]
 
 parseParameter :: Parser Parameter
