@@ -190,7 +190,6 @@ identifier =
   in
     parseMap2 (:) (satisfies isValidFirstChar) (zeroOrMore (satisfies isValidLaterChar))
 
-
 jackTypeParser :: Parser Type
 jackTypeParser =
   choice
@@ -253,8 +252,7 @@ parseBlockComment = do
 whiteSpaceParser :: Parser ()
 whiteSpaceParser =
   Parser $ \string ->
-    let
-      dropped = dropWhile isSpace string
+    let dropped = dropWhile isSpace string
     in
       if string == dropped then Nothing -- some whitespace required
       else Just ((), dropped)
@@ -274,15 +272,19 @@ optionalSpaceParser =
 
 parseCommaSeparated :: Parser a -> Parser [a]
 parseCommaSeparated parser = do
-  list <- parseOptional $ do
-    first <- parser
-    remaining <- zeroOrMore $ do
-      optionalSpaceParser
-      keyword ","
-      optionalSpaceParser
-      parser
-    return (first : remaining)
-  return (resolveMaybeList list)
+  first <- parser
+  remaining <- zeroOrMore $ do
+    optionalSpaceParser
+    keyword ","
+    optionalSpaceParser
+    parser
+  return (first : remaining)
+
+optionalParseCommaSeparated :: Parser a -> Parser [a]
+optionalParseCommaSeparated parser =
+  parseMap resolveMaybeList $
+    parseOptional $
+      parseCommaSeparated parser
 
 parseFail :: Parser a
 parseFail = Parser (\_ -> Nothing)
@@ -292,13 +294,9 @@ parseVarDec = do
   jackType <- jackTypeParser
   requiredSpaceParser
   vars <- parseCommaSeparated identifier
-  case vars of
-    [] ->
-      parseFail
-    _ -> do
-      optionalSpaceParser
-      keyword ";"
-      return (VarDec jackType vars)
+  optionalSpaceParser
+  keyword ";"
+  return (VarDec jackType vars)
 
 parseClassVar :: Parser ClassVar
 parseClassVar = do
@@ -314,7 +312,7 @@ parseOptional parser =
     , return Nothing
     ]
 
-parseIntConstant :: Parser Int
+parseIntConstant :: Parser Term
 parseIntConstant =
   Parser $ \string ->
     case string of
@@ -325,44 +323,44 @@ parseIntConstant =
           let readValue = read (takeWhile isDigit string)
           in
             if readValue <= 32767 then
-              Just (readValue, dropWhile isDigit string)
+              Just (IntConst readValue, dropWhile isDigit string)
             else Nothing
         else Nothing
 
-parseStringConstant :: Parser String
+parseStringConstant :: Parser Term
 parseStringConstant = do
   keyword "\""
   string <- zeroOrMore $
     satisfies $ \c ->
       not ((isNewLine c) || c == '"')
   keyword "\""
-  return string
+  return (StringConst string)
+
+parseSubscript :: Parser VarAccess
+parseSubscript = do
+  varName <- identifier
+  optionalSpaceParser
+  keyword "["
+  optionalSpaceParser
+  index <- parseExpression
+  optionalSpaceParser
+  keyword "]"
+  return (Subscript varName index)
 
 parseAccess :: Parser VarAccess
 parseAccess =
-  let
-    parseArrayAccess = do
-      varName <- identifier
-      optionalSpaceParser
-      keyword "["
-      optionalSpaceParser
-      index <- parseExpression
-      optionalSpaceParser
-      keyword "]"
-      return (Subscript varName index)
-  in
-    choice
-      [ parseArrayAccess
-      , parseMap Var identifier -- this must come after array access because it can start that expression
-      ]
+  choice
+    [ parseSubscript
+    , parseMap Var identifier -- this must come after array access because it can start that expression
+    ]
 
 parseParenthesized :: Parser Term
 parseParenthesized = do
   keyword "("
   optionalSpaceParser
-  term <- parseExpression
+  expression <- parseExpression
   keyword ")"
-  return (Parenthesized term)
+  return (Parenthesized expression)
 
 parseUnqualifiedSubCall :: Parser SubCall
 parseUnqualifiedSubCall = do
@@ -370,7 +368,7 @@ parseUnqualifiedSubCall = do
   optionalSpaceParser
   keyword "("
   optionalSpaceParser
-  arguments <- parseCommaSeparated parseExpression
+  arguments <- optionalParseCommaSeparated parseExpression
   optionalSpaceParser
   keyword ")"
   return (Unqualified name arguments)
@@ -408,8 +406,8 @@ parseUnaryOperation = do
 parseTerm :: Parser Term
 parseTerm =
   choice
-    [ parseMap IntConst parseIntConstant
-    , parseMap StringConst parseStringConstant
+    [ parseIntConstant
+    , parseStringConstant
     , parseKeywordValue
       [ ("true", BoolConst True)
       , ("false", BoolConst False)
@@ -437,15 +435,14 @@ parseOp =
     ]
 
 parseExpression :: Parser Expression
-parseExpression = do
-  firstTerm <- parseTerm
-  operations <- zeroOrMore $ do
-    optionalSpaceParser
-    op <- parseOp
-    optionalSpaceParser
-    term <- parseTerm
-    return (op, term)
-  return (Expression firstTerm operations)
+parseExpression =
+  parseMap2 Expression parseTerm $
+    zeroOrMore $ do
+      optionalSpaceParser
+      op <- parseOp
+      optionalSpaceParser
+      term <- parseTerm
+      return (op, term)
 
 parseLet :: Parser Statement
 parseLet = do
@@ -493,7 +490,7 @@ parseElse = do
   keyword "}"
   return block
 
-resolveMaybeList :: Maybe ([a]) -> [a]
+resolveMaybeList :: Maybe [a] -> [a]
 resolveMaybeList Nothing = []
 resolveMaybeList (Just as) = as
 
@@ -501,8 +498,9 @@ parseIf :: Parser Statement
 parseIf = do
   (expression, block) <- parseConditionAndBlock "if"
   optionalSpaceParser
-  elseBlock <- parseOptional parseElse
-  return (If expression block (resolveMaybeList elseBlock))
+  elseBlock <- parseMap resolveMaybeList $
+    parseOptional parseElse
+  return (If expression block elseBlock)
 
 parseWhile :: Parser Statement
 parseWhile = do
@@ -531,7 +529,7 @@ parseReturnStatement =
       keyword "return"
       returnValue <- choice
         [ spaceAndValueParser
-        , parseMap (\_ -> Nothing) optionalSpaceParser -- this must follow the return value parser since "return" is at the start of "return value"
+        , parseMap (const Nothing) optionalSpaceParser -- this must follow the return value parser since "return" is at the start of "return value"
         ]
       keyword ";"
       return (Return returnValue)
@@ -578,7 +576,7 @@ parseSubroutine = do
   optionalSpaceParser
   keyword "("
   optionalSpaceParser
-  parameters <- parseCommaSeparated parseParameter
+  parameters <- optionalParseCommaSeparated parseParameter
   keyword ")"
   optionalSpaceParser
   keyword "{"
