@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Link List</title>
+		<style>
+			table#colleges {
+				position:relative;
+				top:20px;
+				border-collapse:collapse;
+			}
+			table#colleges th, table#colleges td {
+				border:1px solid black;
+			}
+			td.college-name {
+				font-weight:bold;
+			}
+			td.slug {
+				font-family:monospace;
+			}
+		</style>
+		<script src = 'https://unpkg.com/vue'></script>
+		<script>
+			function randomHexChars(length) {
+				let str = ''
+				for (let i = 0; i < length; i++) {
+					str += Math.floor(Math.random() * 16).toString(16)
+				}
+				return str
+			}
+			window.onload = () => {
+				const app = new Vue({
+					el: 'div#app',
+					data: {
+						collegeName: '',
+						links: []
+					},
+					methods: {
+						addLink: function() {
+							if (!this.collegeName) return
+
+							const college = this.collegeName
+							const slug = randomHexChars(32)
+							this.links.push({
+								college,
+								slug
+							})
+							this.collegeName = ''
+						},
+						deleteLink: function(index) {
+							this.links.splice(index, 1)
+						}
+					}
+				})
+			}
+		</script>
+	</head>
+	<body>
+		<div id = 'app'>
+			<input v-model = 'collegeName' />
+			<button v-on:click = 'addLink'>Make new link</button>
+			<table id = 'colleges'>
+				<thead>
+					<tr>
+						<th>College Name</th>
+						<th>Slug</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for = '(link, index) in links'>
+						<td class = 'college-name'> {{ link.college }} </td>
+						<td class = 'slug'> {{ link.slug }} </td>
+						<td>
+							<button v-on:click = 'deleteLink(index)'>Delete</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>
